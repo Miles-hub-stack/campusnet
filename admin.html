@@ -5,6 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Admin - MySocial</title>
   <link rel="stylesheet" href="styles.css">
+  <script>
+    // Redirect to login if not signed in
+    (function(){
+      try{
+        const u = localStorage.getItem('user');
+        if(!u){ window.location.href = 'login.html'; }
+        // if not System, redirect to index
+        if(u && u !== 'System'){ window.location.href = 'index.html'; }
+      }catch(e){ console.error(e); }
+    })();
+  </script>
   <style>
     .center{max-width:1000px;margin:28px auto;padding:18px}
     .grid{display:grid;grid-template-columns:320px 1fr;gap:16px}
