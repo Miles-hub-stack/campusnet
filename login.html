@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Login - MySocial</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .center{max-width:420px;margin:80px auto;padding:18px}
+    .card{background:#fff;padding:18px;border-radius:12px;border:1px solid #eef2f7}
+    .field{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+    .btn{padding:10px 12px;border-radius:8px;border:0;background:#2b6cb0;color:#fff;cursor:pointer}
+    .link{margin-top:8px;color:#2b6cb0;text-align:center}
+  </style>
+</head>
+<body>
+  <div class="center">
+    <div class="card">
+      <h2 style="margin-bottom:10px">Sign in</h2>
+      <div class="field">
+        <label for="username">Username</label>
+        <input id="username" type="text" placeholder="Your name" />
+      </div>
+      <div id="loginMsg" style="color:#c0262e;margin-top:8px;font-size:0.95rem"></div>
+      <button id="loginBtn" class="btn">Login</button>
+      <div style="display:flex;justify-content:space-between;margin-top:10px;align-items:center">
+        <a href="register.html" style="color:#2b6cb0;text-decoration:none">Register</a>
+        <a href="support.html" style="color:#2b6cb0;text-decoration:none">Support</a>
+      </div>
+      <div class="link" style="margin-top:8px">This demo stores a simple user in localStorage.</div>
+    </div>
+  </div>
+
+  <script>
+    // If already logged in, go to index
+    (function(){
+      try{
+        if(localStorage.getItem('user')){
+          window.location.href = 'index.html';
+        }
+      }catch(e){}
+    })();
+
+    const loginBtn = document.getElementById('loginBtn');
+    const username = document.getElementById('username');
+
+    const loginMsg = document.getElementById('loginMsg');
+    loginBtn.addEventListener('click', ()=>{
+      const v = username.value.trim();
+      loginMsg.textContent = '';
+      if(!v){ loginMsg.textContent = 'Enter a username'; return; }
+      try{
+        const users = JSON.parse(localStorage.getItem('users')||'[]');
+        const profiles = JSON.parse(localStorage.getItem('profiles')||'{}');
+        const exists = users.includes(v) || Boolean(profiles[v]) || Boolean(localStorage.getItem('profile:' + v));
+        if(!exists){ loginMsg.textContent = 'Account not found. Register before you can login.'; return; }
+        localStorage.setItem('user', v);
+        window.location.href = 'index.html';
+      }catch(e){ alert('Unable to save session'); }
+    });
+
+    username.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') loginBtn.click(); });
+  </script>
+</body>
+</html>

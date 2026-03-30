@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Profile - MySocial</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .center{max-width:720px;margin:40px auto;padding:18px}
+    .card{background:#fff;padding:18px;border-radius:12px;border:1px solid #eef2f7}
+    .row{display:flex;gap:12px;align-items:center}
+    .avatar-large{width:96px;height:96px;border-radius:12px}
+    .btn{padding:8px 10px;border-radius:8px;border:0;background:#2b6cb0;color:#fff;cursor:pointer}
+    .field{display:flex;flex-direction:column;gap:6px;margin-top:12px}
+  </style>
+</head>
+<body>
+  <div class="center">
+    <div class="card">
+      <div class="row">
+        <img id="avatar" class="avatar-large" src="https://via.placeholder.com/96" alt="avatar">
+        <div>
+          <h2 id="displayName">User</h2>
+          <div id="userHandle" style="color:#718096">@username</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Bio</label>
+        <textarea id="bio" rows="3"></textarea>
+      </div>
+      <div class="field">
+        <label>Avatar</label>
+        <input id="avatarFile" type="file" accept="image/*">
+        <div id="avatarPreview" style="margin-top:8px"></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button id="saveProfile" class="btn">Save</button>
+        <button id="deleteAccount" class="btn" style="background:#fff;color:#c0262e;border:1px solid #fee2e2">Delete Account</button>
+        <a href="index.html" style="align-self:center">Back</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      const user = localStorage.getItem('user');
+      if(!user) return window.location.href = 'login.html';
+      const p = localStorage.getItem('profile:' + user);
+      const profile = p? JSON.parse(p): {name:user,avatar:'https://via.placeholder.com/96',bio:''};
+      document.getElementById('displayName').textContent = profile.name || user;
+      document.getElementById('userHandle').textContent = '@' + user;
+      document.getElementById('avatar').src = profile.avatar;
+      document.getElementById('bio').value = profile.bio || '';
+      const avatarFile = document.getElementById('avatarFile');
+      const avatarPreview = document.getElementById('avatarPreview');
+      avatarPreview.innerHTML = `<img src="${profile.avatar}" style="max-width:120px;border-radius:8px">`;
+
+      avatarFile.addEventListener('change', (e)=>{
+        const f = e.target.files && e.target.files[0]; if(!f){ avatarFile._dataUrl = null; avatarPreview.innerHTML=''; return; }
+        const r = new FileReader(); r.onload = ev=>{ avatarFile._dataUrl = ev.target.result; avatarPreview.innerHTML = `<img src="${ev.target.result}" style="max-width:120px;border-radius:8px">`; }; r.readAsDataURL(f);
+      });
+
+      document.getElementById('saveProfile').addEventListener('click', ()=>{
+        const bio = document.getElementById('bio').value.trim();
+        const avatar = (avatarFile && avatarFile._dataUrl) ? avatarFile._dataUrl : (profile.avatar || 'https://via.placeholder.com/96');
+        const updated = {name: profile.name || user, avatar, bio};
+        // save individual key
+        localStorage.setItem('profile:' + user, JSON.stringify(updated));
+        // update central profiles map
+        try{
+          const profiles = JSON.parse(localStorage.getItem('profiles')||'{}');
+          profiles[user] = updated;
+          localStorage.setItem('profiles', JSON.stringify(profiles));
+        }catch(e){ console.error('Could not update profiles map', e); }
+        alert('Profile saved');
+        window.location.href = 'index.html';
+      });
+
+      // Delete account and associated data
+      document.getElementById('deleteAccount').addEventListener('click', ()=>{
+        if(!confirm('Delete your account and all associated data? This cannot be undone.')) return;
+        try{
+          // remove individual profile key
+          localStorage.removeItem('profile:' + user);
+          // remove from profiles map
+          const profiles = JSON.parse(localStorage.getItem('profiles')||'{}');
+          if(profiles[user]){ delete profiles[user]; localStorage.setItem('profiles', JSON.stringify(profiles)); }
+          // remove from users list
+          const users = JSON.parse(localStorage.getItem('users')||'[]');
+          const ui = users.indexOf(user); if(ui>-1){ users.splice(ui,1); localStorage.setItem('users', JSON.stringify(users)); }
+          // remove or sanitize posts
+          const posts = JSON.parse(localStorage.getItem('posts')||'[]');
+          const updated = posts.filter(p => p.author !== user).map(p => {
+            if(Array.isArray(p.likedUsers)) p.likedUsers = p.likedUsers.filter(u => u !== user);
+            if(Array.isArray(p.comments)) p.comments = p.comments.filter(c => c.author !== user);
+            p.likes = (p.likedUsers && p.likedUsers.length) || (p.likes||0);
+            return p;
+          });
+          localStorage.setItem('posts', JSON.stringify(updated));
+          // clear session and go to login
+          localStorage.removeItem('user');
+          alert('Account and associated data removed');
+          window.location.href = 'login.html';
+        }catch(e){ console.error(e); alert('Could not delete account'); }
+      });
+    })();
+  </script>
+</body>
+</html>
