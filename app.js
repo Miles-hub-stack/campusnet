@@ -115,10 +115,8 @@ updateCreateUI(false);
 function createPostElement(post) {
   const node = template.content.cloneNode(true);
   // author/profile using Supabase data directly
-  node.querySelector(".name").textContent =
-    post.username || post.author || "Anonymous";
-  node.querySelector(".avatar").src =
-    post.avatar_url || "https://via.placeholder.com/48";
+ node.querySelector(".name").textContent = post.author;
+ node.querySelector(".avatar").src = post.avatar_url;
   // body text
   const body = node.querySelector(".post-body");
   body.textContent = post.text || "";
@@ -339,12 +337,13 @@ async function renderPosts() {
             time: c.created_at || new Date().toISOString(),
           }))
         : [];
+      const profile = profiles[r.user_id] || {};
+
       return {
         id: r.id,
-        author:
-          (profiles[r.user_id] && profiles[r.user_id].username) ||
-          (profiles[r.user_id] && profiles[r.user_id].name) ||
-          r.user_id,
+        author: profile.username || profile.name || "Anonymous", // <- use this
+        username: profile.username || profile.name || "Anonymous",
+        avatar_url: profile.avatar_url || "https://via.placeholder.com/48",
         text: r.content || "",
         media: null,
         likedBy: likes,
