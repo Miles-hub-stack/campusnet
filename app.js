@@ -197,13 +197,13 @@ if(mediaFile){
 async function renderPosts(){
   feed.innerHTML = '';
   let postsArr = [];
+  // determine current Supabase user id (if signed in) to know liked state
+  let supUserId = null;
   try{
     const resp = await SocialSupabase.fetchPosts();
     if(resp.error) throw resp.error;
     const profilesResp = await SocialSupabase.getAllProfiles();
     const profiles = (profilesResp.data || []).reduce((m, p)=>{ m[p.id] = p; m[p.username] = p; return m; }, {});
-    // determine current Supabase user id (if signed in) to know liked state
-    let supUserId = null;
     try{ const uresp = await SocialSupabase.getUser(); supUserId = uresp.data?.user?.id || null; }catch(e){}
 
     postsArr = (resp.data || []).map(r=>{
@@ -222,8 +222,29 @@ async function renderPosts(){
     });
   }catch(e){
     console.error('Failed to load posts from Supabase', e);
-    feed.innerHTML = '<div style="padding:20px;color:#666">Unable to load feed.</div>';
-    return;
+    // Try a simpler fetch without nested relations as a fallback
+    try{
+      const fb = await SocialSupabase.fetchPostsSimple();
+      if(fb.error) throw fb.error;
+      const profilesResp = await SocialSupabase.getAllProfiles();
+      const profiles = (profilesResp.data || []).reduce((m, p)=>{ m[p.id] = p; m[p.username] = p; return m; }, {});
+      try{ const uresp = await SocialSupabase.getUser(); supUserId = uresp.data?.user?.id || null; }catch(e){}
+      postsArr = (fb.data || []).map(r=>({
+        id: r.id,
+        author: (profiles[r.user_id] && profiles[r.user_id].username) || (profiles[r.user_id] && profiles[r.user_id].name) || r.user_id,
+        text: r.content || '',
+        media: null,
+        likedBy: [],
+        likesCount: 0,
+        comments: [],
+        time: r.created_at || new Date().toISOString()
+      }));
+      // continue to rendering below
+    }catch(fbErr){
+      const msg = fbErr?.message || (typeof fbErr === 'string' ? fbErr : JSON.stringify(fbErr));
+      feed.innerHTML = `<div style="padding:20px;color:#666">Unable to load feed: ${msg}</div>`;
+      return;
+    }
   }
 
   // ensure System profile uses CampusNet.png locally (keeps avatar behavior)

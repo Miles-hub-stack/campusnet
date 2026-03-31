@@ -139,6 +139,18 @@
       });
     },
 
+    // Fallback: simple posts fetch without nested relations (useful if relations not configured)
+    async fetchPostsSimple(){
+      return new Promise((resolve)=>{
+        _enqueue(async ()=>{
+          try{
+            const { data, error } = await _sb.from('posts').select('id, content, user_id, created_at').order('created_at', { ascending: false });
+            resolve({ data, error });
+          }catch(e){ resolve({ error: e }); }
+        });
+      });
+    },
+
     async addLike(post_id){
       return new Promise((resolve)=>{
         _enqueue(async ()=>{
