@@ -41,3 +41,7 @@ Meta tags for older browsers (add to `<head>` of your HTML):
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 ```
+
+SQL schema
+- A ready-to-run SQL file is included in this project: `supabase-schema.sql`.
+- Run it in your Supabase project's SQL editor to create the `profiles` and `posts` tables and add recommended RLS policies.

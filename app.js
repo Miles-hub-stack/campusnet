@@ -28,6 +28,8 @@ try{
     try{
       const u = await SocialSupabase.getUser();
       const sup = u.data?.user;
+      // update create UI based on sup auth
+      updateCreateUI(Boolean(sup));
       if(sup){
         const uname = sup.user_metadata?.username || (sup.email ? sup.email.split('@')[0] : null);
         if(uname){ currentUser = uname; try{ localStorage.setItem('user', uname); }catch(e){} }
@@ -38,6 +40,38 @@ try{
     }catch(e){ /* ignore */ }
   }
 })();
+
+// Update create-post UI based on authentication state
+function updateCreateUI(isAuthenticated){
+  try{
+    if(!postText || !postBtn) return;
+    postText.disabled = !isAuthenticated;
+    postBtn.disabled = !isAuthenticated;
+    if(mediaFile) mediaFile.disabled = !isAuthenticated;
+    // show a sign-in hint when not authenticated
+    let hint = document.getElementById('authHint');
+    if(!isAuthenticated){
+      if(!hint){
+        hint = document.createElement('div');
+        hint.id = 'authHint';
+        hint.style.padding = '10px 12px';
+        hint.style.marginBottom = '8px';
+        hint.style.background = '#fffbeb';
+        hint.style.border = '1px solid #fef3c7';
+        hint.style.borderRadius = '8px';
+        hint.style.color = '#92400e';
+        hint.innerHTML = 'Sign in to create posts — <a href="login.html">Sign in</a>';
+        const createSection = document.querySelector('.create-post');
+        if(createSection) createSection.insertBefore(hint, createSection.firstChild);
+      }
+    } else {
+      if(hint && hint.parentNode) hint.parentNode.removeChild(hint);
+    }
+  }catch(e){ console.warn('Could not update create UI', e); }
+}
+
+// initialize UI state (assume unauthenticated until sync finishes)
+updateCreateUI(false);
 
 function createPostElement(post){
   const node = template.content.cloneNode(true);
@@ -115,7 +149,7 @@ postBtn.addEventListener('click', async ()=>{
     } else {
       throw new Error('Supabase client unavailable');
     }
-  }catch(e){ console.error('Failed to save post to server', e); alert('Could not save post.'); }
+  }catch(e){ console.error('Failed to save post to server', e); alert('Could not save post'); }
   postText.value = '';
   charCount.textContent = 0;
   if(mediaFile){ mediaFile.value = ''; mediaFile._dataUrl = null; mediaPreview.innerHTML = ''; }
