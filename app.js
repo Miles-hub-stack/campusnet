@@ -144,7 +144,12 @@ postBtn.addEventListener('click', async ()=>{
       const supUser = uresp.data?.user;
       if(!supUser){ alert('Please sign in to create a post.'); return; }
       const res = await SocialSupabase.addPost({ content: post.text });
-      if(res.error){ throw res.error; }
+      if(res.error){
+        console.error('Add post error', res.error);
+        const msg = res.error.message || (typeof res.error === 'string' ? res.error : JSON.stringify(res.error));
+        alert('Could not save post: ' + msg);
+        return;
+      }
       await renderPosts();
     } else {
       throw new Error('Supabase client unavailable');
