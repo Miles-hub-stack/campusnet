@@ -325,37 +325,34 @@ async function renderPosts() {
       supUserId = uresp.data?.user?.id || null;
     } catch (e) {}
 
-  postsArr = (resp.data || []).map((r) => {
-    const likes = Array.isArray(r.likes)
-      ? r.likes.map((x) => x.user_id || x.userId || x.id)
-      : [];
-    const comments = Array.isArray(r.comments)
-      ? r.comments.map((c) => {
-          const p = profiles[c.user_id] || {};
-          return {
-            author: p.username || p.name || "Anonymous",
-            avatar_url: p.avatar_url || "https://via.placeholder.com/48",
+    postsArr = (resp.data || []).map((r) => {
+      const likes = Array.isArray(r.likes)
+        ? r.likes.map((x) => x.user_id || x.userId || x.id)
+        : [];
+      const comments = Array.isArray(r.comments)
+        ? r.comments.map((c) => ({
+            author:
+              (profiles[c.user_id] && profiles[c.user_id].username) ||
+              (profiles[c.user_id] && profiles[c.user_id].name) ||
+              c.user_id,
             text: c.content || "",
             time: c.created_at || new Date().toISOString(),
-          };
-        })
-      : [];
-
-    const profile = profiles[r.user_id] || {};
-
-    return {
-      id: r.id,
-      author: r.user_id,
-      username: profile.username || profile.name || "Anonymous",
-      avatar_url: profile.avatar_url || "https://via.placeholder.com/48",
-      text: r.content || "",
-      media: null,
-      likedBy: likes,
-      likesCount: likes.length,
-      comments: comments,
-      time: r.created_at || new Date().toISOString(),
-    };
-  });
+          }))
+        : [];
+      return {
+        id: r.id,
+        author:
+          (profiles[r.user_id] && profiles[r.user_id].username) ||
+          (profiles[r.user_id] && profiles[r.user_id].name) ||
+          r.user_id,
+        text: r.content || "",
+        media: null,
+        likedBy: likes,
+        likesCount: likes.length,
+        comments: comments,
+        time: r.created_at || new Date().toISOString(),
+      };
+    });
   } catch (e) {
     console.error("Failed to load posts from Supabase", e);
     // Try a simpler fetch without nested relations as a fallback
