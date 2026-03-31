@@ -24,6 +24,7 @@
       <div class="field"><label>Bio</label><textarea id="bio" rows="3" placeholder="A short bio"></textarea></div>
       <button id="registerBtn" class="btn">Register</button>
       <div style="margin-top:8px;font-size:0.9rem;color:#718096">Accounts are stored locally for demo purposes.</div>
+      <div id="registerMsg" style="margin-top:10px"></div>
     </div>
   </div>
 
@@ -65,9 +66,9 @@
           if(!users.includes(username)){ users.push(username); localStorage.setItem('users', JSON.stringify(users)); }
         }catch(e){ console.warn('local profile save failed', e); }
 
-        // set active session locally for UI compatibility
-        localStorage.setItem('user', username);
-        window.location.href = 'index.html';
+        // Do not auto-login: show message instructing user to check their email for confirmation
+        const msgDiv = document.getElementById('registerMsg');
+        msgDiv.innerHTML = `<div style="padding:12px;background:#f0f9ff;border:1px solid #b6e0fe;border-radius:8px;color:#023047">Registration successful. Check your email (<strong>${email}</strong>) for a confirmation link. After confirming your email, return to <a href="login.html">Sign in</a>.</div>`;
       }catch(e){ console.error(e); alert('Unable to register'); }
     });
   </script>

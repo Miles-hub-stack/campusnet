@@ -60,18 +60,19 @@
     </article>
   </template>
 
+  <script src="supabase-client.js"></script>
   <script src="app.js"></script>
   <script>
-    // Redirect to login if no user in localStorage
-    (function(){
+    (async function(){
       try{
-        const u = localStorage.getItem('user');
-        if(!u){
-          window.location.href = 'login.html';
+        if(window.SocialSupabase){
+          const u = await SocialSupabase.getUser();
+          const user = u.data?.user;
+          if(!user && !localStorage.getItem('user')){ window.location.href = 'login.html'; }
+        } else {
+          const u = localStorage.getItem('user'); if(!u) window.location.href = 'login.html';
         }
-      }catch(e){
-        console.error('Storage unavailable', e);
-      }
+      }catch(e){ console.error('Auth check failed', e); }
     })();
   </script>
 </body>

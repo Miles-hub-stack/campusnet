@@ -42,18 +42,45 @@
     </div>
   </div>
 
+  <script src="supabase-client.js"></script>
   <script>
-    (function(){
-      const user = localStorage.getItem('user');
-      if(!user) return window.location.href = 'login.html';
-      const p = localStorage.getItem('profile:' + user);
-      const profile = p? JSON.parse(p): {name:user,avatar:'https://via.placeholder.com/96',bio:''};
-      document.getElementById('displayName').textContent = profile.name || user;
-      document.getElementById('userHandle').textContent = '@' + user;
-      document.getElementById('avatar').src = profile.avatar;
-      document.getElementById('bio').value = profile.bio || '';
+    (async function(){
+      const localUser = localStorage.getItem('user');
+      // if no session locally, try supabase
+      let username = localUser;
+      let supUser = null;
+      if(window.SocialSupabase){
+        try{ const u = await SocialSupabase.getUser(); supUser = u.data?.user; }catch(e){}
+        if(supUser){ username = supUser.user_metadata?.username || (supUser.email ? supUser.email.split('@')[0] : username); }
+      }
+      if(!username) return window.location.href = 'login.html';
+
+      const avatarEl = document.getElementById('avatar');
+      const displayNameEl = document.getElementById('displayName');
+      const userHandleEl = document.getElementById('userHandle');
+      const bioEl = document.getElementById('bio');
       const avatarFile = document.getElementById('avatarFile');
       const avatarPreview = document.getElementById('avatarPreview');
+
+      // Load profile: prefer server profile when possible
+      let profile = { name: username, avatar: 'https://via.placeholder.com/96', bio: '' };
+      if(window.SocialSupabase && username){
+        try{
+          const resp = await SocialSupabase.getProfileByUsername(username);
+          if(!resp.error && resp.data){ profile = { name: resp.data.name || username, avatar: resp.data.avatar || profile.avatar, bio: resp.data.bio || '' , id: resp.data.id };
+          }
+        }catch(e){ console.warn('Profile fetch failed', e); }
+      }
+      // fallback to localStorage if server profile not available
+      try{
+        const p = localStorage.getItem('profile:' + username);
+        if(p){ const lp = JSON.parse(p); profile = Object.assign(profile, lp); }
+      }catch(e){}
+
+      displayNameEl.textContent = profile.name || username;
+      userHandleEl.textContent = '@' + username;
+      avatarEl.src = profile.avatar;
+      bioEl.value = profile.bio || '';
       avatarPreview.innerHTML = `<img src="${profile.avatar}" style="max-width:120px;border-radius:8px">`;
 
       avatarFile.addEventListener('change', (e)=>{
@@ -61,49 +88,42 @@
         const r = new FileReader(); r.onload = ev=>{ avatarFile._dataUrl = ev.target.result; avatarPreview.innerHTML = `<img src="${ev.target.result}" style="max-width:120px;border-radius:8px">`; }; r.readAsDataURL(f);
       });
 
-      document.getElementById('saveProfile').addEventListener('click', ()=>{
-        const bio = document.getElementById('bio').value.trim();
+      document.getElementById('saveProfile').addEventListener('click', async ()=>{
+        const bio = bioEl.value.trim();
         const avatar = (avatarFile && avatarFile._dataUrl) ? avatarFile._dataUrl : (profile.avatar || 'https://via.placeholder.com/96');
-        const updated = {name: profile.name || user, avatar, bio};
-        // save individual key
-        localStorage.setItem('profile:' + user, JSON.stringify(updated));
-        // update central profiles map
-        try{
-          const profiles = JSON.parse(localStorage.getItem('profiles')||'{}');
-          profiles[user] = updated;
-          localStorage.setItem('profiles', JSON.stringify(profiles));
-        }catch(e){ console.error('Could not update profiles map', e); }
-        alert('Profile saved');
-        window.location.href = 'index.html';
+        const updated = { username: username, name: profile.name || username, avatar, bio };
+        // attempt server update
+        if(window.SocialSupabase){
+          try{
+            const res = await SocialSupabase.updateProfile(Object.assign({}, updated, { id: profile.id || null }));
+            if(res.error){ throw res.error; }
+          }catch(e){ console.warn('Server profile update failed', e); }
+        }
+        // save locally for demo compatibility
+        try{ localStorage.setItem('profile:' + username, JSON.stringify({ name: updated.name, avatar: updated.avatar, bio: updated.bio })); const profiles = JSON.parse(localStorage.getItem('profiles')||'{}'); profiles[username] = { name: updated.name, avatar: updated.avatar, bio: updated.bio }; localStorage.setItem('profiles', JSON.stringify(profiles)); }catch(e){ console.warn('local save failed', e); }
+        alert('Profile saved'); window.location.href = 'index.html';
       });
 
-      // Delete account and associated data
-      document.getElementById('deleteAccount').addEventListener('click', ()=>{
+      document.getElementById('deleteAccount').addEventListener('click', async ()=>{
         if(!confirm('Delete your account and all associated data? This cannot be undone.')) return;
         try{
-          // remove individual profile key
-          localStorage.removeItem('profile:' + user);
-          // remove from profiles map
-          const profiles = JSON.parse(localStorage.getItem('profiles')||'{}');
-          if(profiles[user]){ delete profiles[user]; localStorage.setItem('profiles', JSON.stringify(profiles)); }
-          // remove from users list
-          const users = JSON.parse(localStorage.getItem('users')||'[]');
-          const ui = users.indexOf(user); if(ui>-1){ users.splice(ui,1); localStorage.setItem('users', JSON.stringify(users)); }
-          // remove or sanitize posts
-          const posts = JSON.parse(localStorage.getItem('posts')||'[]');
-          const updated = posts.filter(p => p.author !== user).map(p => {
-            if(Array.isArray(p.likedUsers)) p.likedUsers = p.likedUsers.filter(u => u !== user);
-            if(Array.isArray(p.comments)) p.comments = p.comments.filter(c => c.author !== user);
-            p.likes = (p.likedUsers && p.likedUsers.length) || (p.likes||0);
-            return p;
-          });
-          localStorage.setItem('posts', JSON.stringify(updated));
-          // clear session and go to login
+          // attempt to delete server profile row
+          if(window.SocialSupabase && profile.id){
+            try{ await SocialSupabase.deleteProfileById(profile.id); }catch(e){ console.warn('Server profile delete failed', e); }
+          }
+          // local cleanup (same as before)
+          localStorage.removeItem('profile:' + username);
+          const profiles = JSON.parse(localStorage.getItem('profiles')||'{}'); if(profiles[username]){ delete profiles[username]; localStorage.setItem('profiles', JSON.stringify(profiles)); }
+          const users = JSON.parse(localStorage.getItem('users')||'[]'); const ui = users.indexOf(username); if(ui>-1){ users.splice(ui,1); localStorage.setItem('users', JSON.stringify(users)); }
+          const posts = JSON.parse(localStorage.getItem('posts')||'[]'); const updatedPosts = posts.filter(p => p.author !== username).map(p => { if(Array.isArray(p.likedUsers)) p.likedUsers = p.likedUsers.filter(u => u !== username); if(Array.isArray(p.comments)) p.comments = p.comments.filter(c => c.author !== username); p.likes = (p.likedUsers && p.likedUsers.length) || (p.likes||0); return p; }); localStorage.setItem('posts', JSON.stringify(updatedPosts));
+          // sign out supabase user if present
+          if(window.SocialSupabase && supUser){ try{ await SocialSupabase.logout(); }catch(e){ console.warn('Supabase logout failed', e); } }
           localStorage.removeItem('user');
           alert('Account and associated data removed');
           window.location.href = 'login.html';
         }catch(e){ console.error(e); alert('Could not delete account'); }
       });
+
     })();
   </script>
 </body>

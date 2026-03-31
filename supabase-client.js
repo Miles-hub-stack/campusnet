@@ -60,8 +60,11 @@
       return new Promise((resolve)=>{
         _enqueue(async ()=>{
           try{
-            // sign up with metadata
-            const { data, error } = await _sb.auth.signUp({ email, password }, { data: { username } });
+            // sign up with metadata and redirectTo for production
+            const { data, error } = await _sb.auth.signUp(
+              { email, password },
+              { redirectTo: 'https://tiny-chaja-0c32c9.netlify.app/login.html', data: { username } }
+            );
             if(error) return resolve({ error });
             // optionally create or update a profile record in "profiles" table if you have one
             try{
@@ -131,6 +134,40 @@
           try{
             // fetch posts ordered by newest
             const { data, error } = await _sb.from('posts').select('*').order('created_at', { ascending: false });
+            resolve({ data, error });
+          }catch(e){ resolve({ error: e }); }
+        });
+      });
+    },
+
+    // Profiles helpers
+    async getProfileByUsername(username){
+      return new Promise((resolve)=>{
+        _enqueue(async ()=>{
+          try{
+            const { data, error } = await _sb.from('profiles').select('*').eq('username', username).limit(1).single();
+            resolve({ data, error });
+          }catch(e){ resolve({ error: e }); }
+        });
+      });
+    },
+
+    async updateProfile(profileRow){
+      return new Promise((resolve)=>{
+        _enqueue(async ()=>{
+          try{
+            const { data, error } = await _sb.from('profiles').upsert(profileRow);
+            resolve({ data, error });
+          }catch(e){ resolve({ error: e }); }
+        });
+      });
+    },
+
+    async deleteProfileById(id){
+      return new Promise((resolve)=>{
+        _enqueue(async ()=>{
+          try{
+            const { data, error } = await _sb.from('profiles').delete().eq('id', id);
             resolve({ data, error });
           }catch(e){ resolve({ error: e }); }
         });
