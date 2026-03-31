@@ -1,196 +1,403 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Admin - MySocial</title>
-  <link rel="stylesheet" href="styles.css">
-  <script src="supabase-client.js"></script>
-  <script>
-    // Redirect to login if not signed in
-    (function(){
-      try{
-        const u = localStorage.getItem('user');
-        if(!u){ window.location.href = 'login.html'; }
-        // if not System, redirect to index
-        if(u && u !== 'System'){ window.location.href = 'index.html'; }
-      }catch(e){ console.error(e); }
-    })();
-  </script>
-  <style>
-    .center{max-width:1000px;margin:28px auto;padding:18px}
-    .grid{display:grid;grid-template-columns:320px 1fr;gap:16px}
-    .profile-item{display:flex;gap:8px;align-items:center;padding:8px;border-bottom:1px solid #f1f5f9}
-    .avatar-thumb{width:48px;height:48px;border-radius:8px;object-fit:cover}
-    .btn{padding:8px 10px;border-radius:8px;border:0;background:#2b6cb0;color:#fff;cursor:pointer}
-    .muted{color:#718096;font-size:0.9rem}
-    label{font-weight:600;font-size:0.9rem}
-    /* Responsive adjustments */
-    .profiles-wrap{max-height:520px;overflow:auto}
-    @media (max-width:900px){
-      .center{padding:12px}
-      .grid{grid-template-columns:1fr;}
-      .profile-item{padding:10px}
-      .avatar-thumb{width:44px;height:44px}
-      #editor{margin-top:12px}
-      .profiles-wrap{max-height:360px}
-    }
-    @media (max-width:480px){
-      .avatar-thumb{width:40px;height:40px}
-      .btn{padding:8px 8px;font-size:0.9rem}
-      .grid{gap:12px}
-      .center{margin:12px}
-    }
-  </style>
-</head>
-<body>
-  <header class="nav">
-    <div class="nav-left"><div class="logo">Admin Space</div></div>
-    <div class="nav-right">
-      <a href="index.html" class="primary" style="background:#fff;color:#2b6cb0;border:1px solid #dbeafe;padding:6px 10px;border-radius:8px;text-decoration:none;">Home</a>
-    </div>
-  </header>
-
-  <main class="center">
-    <div class="grid">
-      <div>
-        <h3>Profiles</h3>
-        <div id="profilesList" class="profiles-wrap" style="background:#fff;border-radius:8px;border:1px solid #eef2f7;max-height:520px"></div>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Admin - MySocial</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="supabase-client.js"></script>
+    <script>
+      // Redirect to login if not signed in
+      (function () {
+        try {
+          const u = localStorage.getItem("user");
+          if (!u) {
+            window.location.href = "login.html";
+          }
+          // if not System, redirect to index
+          if (u && u !== "System") {
+            window.location.href = "index.html";
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      })();
+    </script>
+    <style>
+      .center {
+        max-width: 1000px;
+        margin: 28px auto;
+        padding: 18px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 320px 1fr;
+        gap: 16px;
+      }
+      .profile-item {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        padding: 8px;
+        border-bottom: 1px solid #f1f5f9;
+      }
+      .avatar-thumb {
+        width: 48px;
+        height: 48px;
+        border-radius: 8px;
+        object-fit: cover;
+      }
+      .btn {
+        padding: 8px 10px;
+        border-radius: 8px;
+        border: 0;
+        background: #2b6cb0;
+        color: #fff;
+        cursor: pointer;
+      }
+      .muted {
+        color: #718096;
+        font-size: 0.9rem;
+      }
+      label {
+        font-weight: 600;
+        font-size: 0.9rem;
+      }
+      /* Responsive adjustments */
+      .profiles-wrap {
+        max-height: 520px;
+        overflow: auto;
+      }
+      @media (max-width: 900px) {
+        .center {
+          padding: 12px;
+        }
+        .grid {
+          grid-template-columns: 1fr;
+        }
+        .profile-item {
+          padding: 10px;
+        }
+        .avatar-thumb {
+          width: 44px;
+          height: 44px;
+        }
+        #editor {
+          margin-top: 12px;
+        }
+        .profiles-wrap {
+          max-height: 360px;
+        }
+      }
+      @media (max-width: 480px) {
+        .avatar-thumb {
+          width: 40px;
+          height: 40px;
+        }
+        .btn {
+          padding: 8px 8px;
+          font-size: 0.9rem;
+        }
+        .grid {
+          gap: 12px;
+        }
+        .center {
+          margin: 12px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="nav">
+      <div class="nav-left"><div class="logo">Admin Space</div></div>
+      <div class="nav-right">
+        <a
+          href="index.html"
+          class="primary"
+          style="
+            background: #fff;
+            color: #2b6cb0;
+            border: 1px solid #dbeafe;
+            padding: 6px 10px;
+            border-radius: 8px;
+            text-decoration: none;
+          "
+          >Home</a
+        >
       </div>
+    </header>
 
-      <div>
-        <div style="background:#fff;padding:16px;border-radius:8px;border:1px solid #eef2f7">
-          <h3 id="editorTitle">Select a profile to edit</h3>
-          <div id="editor" style="display:none">
-            <div style="display:flex;gap:12px;align-items:center">
-              <img id="editAvatar" src="https://via.placeholder.com/96" class="avatar-thumb" alt="avatar">
-              <div>
-                <label>Name</label>
-                <input id="editName" type="text" style="width:100%;padding:8px;border-radius:6px;border:1px solid #e6e9ee">
-                <div style="margin-top:8px">
-                  <label>Avatar</label>
-                  <input id="editAvatarFile" type="file" accept="image/*">
-                </div>
-              </div>
-            </div>
-
-            <div style="margin-top:12px">
-              <label>Bio</label>
-              <textarea id="editBio" rows="4" style="width:100%;padding:8px;border-radius:6px;border:1px solid #e6e9ee"></textarea>
-            </div>
-
-            <div style="display:flex;gap:8px;margin-top:12px">
-              <button id="saveProfileBtn" class="btn">Save</button>
-              <button id="deleteProfileBtn" class="btn" style="background:#fff;color:#c0262e;border:1px solid #fee2e2">Delete</button>
-              <button id="closeEditor" class="btn" style="background:#f1f5f9;color:#111">Close</button>
-            </div>
-          </div>
+    <main class="center">
+      <div class="grid">
+        <div>
+          <h3>Profiles</h3>
+          <div
+            id="profilesList"
+            class="profiles-wrap"
+            style="
+              background: #fff;
+              border-radius: 8px;
+              border: 1px solid #eef2f7;
+              max-height: 520px;
+            "
+          ></div>
         </div>
 
-        <div style="margin-top:12px;color:#718096">Tip: editing a profile updates posts shown in the feed. Deleting removes the user and their posts.</div>
+        <div>
+          <div
+            style="
+              background: #fff;
+              padding: 16px;
+              border-radius: 8px;
+              border: 1px solid #eef2f7;
+            "
+          >
+            <h3 id="editorTitle">Select a profile to edit</h3>
+            <div id="editor" style="display: none">
+              <div style="display: flex; gap: 12px; align-items: center">
+                <img
+                  id="editAvatar"
+                  src="https://via.placeholder.com/96"
+                  class="avatar-thumb"
+                  alt="avatar"
+                />
+                <div>
+                  <label>Name</label>
+                  <input
+                    id="editName"
+                    type="text"
+                    style="
+                      width: 100%;
+                      padding: 8px;
+                      border-radius: 6px;
+                      border: 1px solid #e6e9ee;
+                    "
+                  />
+                  <div style="margin-top: 8px">
+                    <label>Avatar</label>
+                    <input id="editAvatarFile" type="file" accept="image/*" />
+                  </div>
+                </div>
+              </div>
+
+              <div style="margin-top: 12px">
+                <label>Bio</label>
+                <textarea
+                  id="editBio"
+                  rows="4"
+                  style="
+                    width: 100%;
+                    padding: 8px;
+                    border-radius: 6px;
+                    border: 1px solid #e6e9ee;
+                  "
+                ></textarea>
+              </div>
+
+              <div style="display: flex; gap: 8px; margin-top: 12px">
+                <button id="saveProfileBtn" class="btn">Save</button>
+                <button
+                  id="deleteProfileBtn"
+                  class="btn"
+                  style="
+                    background: #fff;
+                    color: #c0262e;
+                    border: 1px solid #fee2e2;
+                  "
+                >
+                  Delete
+                </button>
+                <button
+                  id="closeEditor"
+                  class="btn"
+                  style="background: #f1f5f9; color: #111"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top: 12px; color: #718096">
+            Tip: editing a profile updates posts shown in the feed. Deleting
+            removes the user and their posts.
+          </div>
+        </div>
       </div>
-    </div>
-  </main>
+    </main>
 
-  <script>
-    function qs(id){ return document.getElementById(id); }
-    const list = qs('profilesList');
-    let profiles = JSON.parse(localStorage.getItem('profiles')||'{}');
-    let users = JSON.parse(localStorage.getItem('users')||'[]');
-    // ensure users sync with profiles
-    users = Array.from(new Set(users.concat(Object.keys(profiles))));
-    localStorage.setItem('users', JSON.stringify(users));
+    <script>
+      function qs(id) {
+        return document.getElementById(id);
+      }
+      const list = qs("profilesList");
+      let profiles = JSON.parse(localStorage.getItem("profiles") || "{}");
+      let users = JSON.parse(localStorage.getItem("users") || "[]");
+      // ensure users sync with profiles
+      users = Array.from(new Set(users.concat(Object.keys(profiles))));
+      localStorage.setItem("users", JSON.stringify(users));
 
-    function refreshList(){
-      profiles = JSON.parse(localStorage.getItem('profiles')||'{}');
-      users = JSON.parse(localStorage.getItem('users')||'[]');
-      list.innerHTML = '';
-      users.forEach(u=>{
-        const p = profiles[u] || JSON.parse(localStorage.getItem('profile:' + u) || 'null') || {name:u,avatar:'https://via.placeholder.com/48',bio:''};
-        const row = document.createElement('div'); row.className = 'profile-item';
-        row.innerHTML = `<img src="${p.avatar}" class="avatar-thumb"><div style="flex:1"><div style="font-weight:600">${p.name}</div><div class=\"muted\">@${u}</div></div><div><button class=\"btn\" data-user=\"${u}\">Edit</button></div>`;
-        list.appendChild(row);
+      function refreshList() {
+        profiles = JSON.parse(localStorage.getItem("profiles") || "{}");
+        users = JSON.parse(localStorage.getItem("users") || "[]");
+        list.innerHTML = "";
+        users.forEach((u) => {
+          const p = profiles[u] ||
+            JSON.parse(localStorage.getItem("profile:" + u) || "null") || {
+              name: u,
+              avatar: "https://via.placeholder.com/48",
+              bio: "",
+            };
+          const row = document.createElement("div");
+          row.className = "profile-item";
+          row.innerHTML = `<img src="${p.avatar}" class="avatar-thumb"><div style="flex:1"><div style="font-weight:600">${p.name}</div><div class=\"muted\">@${u}</div></div><div><button class=\"btn\" data-user=\"${u}\">Edit</button></div>`;
+          list.appendChild(row);
+        });
+        // wire edit buttons
+        list
+          .querySelectorAll("button[data-user]")
+          .forEach((b) =>
+            b.addEventListener("click", () => openEditor(b.dataset.user)),
+          );
+      }
+
+      function openEditor(username) {
+        const p = JSON.parse(localStorage.getItem("profiles") || "{}")[
+          username
+        ] ||
+          JSON.parse(localStorage.getItem("profile:" + username) || "null") || {
+            name: username,
+            avatar: "https://via.placeholder.com/96",
+            bio: "",
+          };
+        qs("editorTitle").textContent = "Editing: @" + username;
+        qs("editName").value = p.name || username;
+        qs("editBio").value = p.bio || "";
+        qs("editAvatar").src = p.avatar || "https://via.placeholder.com/96";
+        qs("editor").style.display = "block";
+        qs("editor").dataset.user = username;
+      }
+
+      qs("closeEditor").addEventListener("click", () => {
+        qs("editor").style.display = "none";
       });
-      // wire edit buttons
-      list.querySelectorAll('button[data-user]').forEach(b=> b.addEventListener('click', ()=> openEditor(b.dataset.user)));
-    }
 
-    function openEditor(username){
-      const p = JSON.parse(localStorage.getItem('profiles')||'{}')[username] || JSON.parse(localStorage.getItem('profile:' + username) || 'null') || {name:username,avatar:'https://via.placeholder.com/96',bio:''};
-      qs('editorTitle').textContent = 'Editing: @' + username;
-      qs('editName').value = p.name || username;
-      qs('editBio').value = p.bio || '';
-      qs('editAvatar').src = p.avatar || 'https://via.placeholder.com/96';
-      qs('editor').style.display = 'block';
-      qs('editor').dataset.user = username;
-    }
+      qs("editAvatarFile").addEventListener("change", (e) => {
+        const f = e.target.files && e.target.files[0];
+        if (!f) return;
+        const r = new FileReader();
+        r.onload = (ev) => {
+          qs("editAvatar").src = ev.target.result;
+          qs("editAvatar").dataset.dataUrl = ev.target.result;
+        };
+        r.readAsDataURL(f);
+      });
 
-    qs('closeEditor').addEventListener('click', ()=>{ qs('editor').style.display='none'; });
-
-    qs('editAvatarFile').addEventListener('change', (e)=>{
-      const f = e.target.files && e.target.files[0]; if(!f) return;
-      const r = new FileReader(); r.onload = ev => { qs('editAvatar').src = ev.target.result; qs('editAvatar').dataset.dataUrl = ev.target.result; }; r.readAsDataURL(f);
-    });
-
-    qs('saveProfileBtn').addEventListener('click', ()=>{
-      (async function(){
-        const username = qs('editor').dataset.user; if(!username) return;
-        const name = qs('editName').value.trim();
-        const bio = qs('editBio').value.trim();
-        const avatar = qs('editAvatar').dataset.dataUrl || qs('editAvatar').src || 'https://via.placeholder.com/96';
-        try{
-          // attempt server update
-          if(window.SocialSupabase){
-            try{
-              const existing = await SocialSupabase.getProfileByUsername(username);
-              const id = existing.data?.id || null;
-              await SocialSupabase.updateProfile({ id, username, name: name || username, avatar, bio });
-            }catch(e){ console.warn('Server profile upsert failed', e); }
+      qs("saveProfileBtn").addEventListener("click", () => {
+        (async function () {
+          const username = qs("editor").dataset.user;
+          if (!username) return;
+          const name = qs("editName").value.trim();
+          const bio = qs("editBio").value.trim();
+          const avatar =
+            qs("editAvatar").dataset.dataUrl ||
+            qs("editAvatar").src ||
+            "https://via.placeholder.com/96";
+          try {
+            // attempt server update
+            if (window.SocialSupabase) {
+              try {
+                const existing =
+                  await SocialSupabase.getProfileByUsername(username);
+                const id = existing.data?.id || null;
+                await SocialSupabase.updateProfile({
+                  id,
+                  username,
+                  name: name || username,
+                  avatar,
+                  bio,
+                });
+              } catch (e) {
+                console.warn("Server profile upsert failed", e);
+              }
+            }
+            const profilesMap = JSON.parse(
+              localStorage.getItem("profiles") || "{}",
+            );
+            profilesMap[username] = { name: name || username, avatar, bio };
+            localStorage.setItem("profiles", JSON.stringify(profilesMap));
+            localStorage.setItem(
+              "profile:" + username,
+              JSON.stringify(profilesMap[username]),
+            );
+            alert("Profile saved");
+            refreshList();
+            localStorage.setItem("profilesUpdatedAt", Date.now());
+          } catch (e) {
+            console.error(e);
+            alert("Could not save");
           }
-          const profilesMap = JSON.parse(localStorage.getItem('profiles')||'{}');
-          profilesMap[username] = {name: name || username, avatar, bio};
-          localStorage.setItem('profiles', JSON.stringify(profilesMap));
-          localStorage.setItem('profile:' + username, JSON.stringify(profilesMap[username]));
-          alert('Profile saved');
-          refreshList();
-          localStorage.setItem('profilesUpdatedAt', Date.now());
-        }catch(e){ console.error(e); alert('Could not save'); }
-      })();
-    });
+        })();
+      });
 
-    qs('deleteProfileBtn').addEventListener('click', ()=>{
-      (async function(){
-        const username = qs('editor').dataset.user; if(!username) return;
-        if(!confirm('Delete user ' + username + ' and all their posts?')) return;
-        try{
-          // attempt server deletion of profile + posts
-          if(window.SocialSupabase){
-            try{
-              const resp = await SocialSupabase.getProfileByUsername(username);
-              const id = resp.data?.id || null;
-              if(id){ await SocialSupabase.deletePostsByUser(id); await SocialSupabase.deleteProfileById(id); }
-            }catch(e){ console.warn('Server delete failed', e); }
+      qs("deleteProfileBtn").addEventListener("click", () => {
+        (async function () {
+          const username = qs("editor").dataset.user;
+          if (!username) return;
+          if (!confirm("Delete user " + username + " and all their posts?"))
+            return;
+          try {
+            // attempt server deletion of profile + posts
+            if (window.SocialSupabase) {
+              try {
+                const resp =
+                  await SocialSupabase.getProfileByUsername(username);
+                const id = resp.data?.id || null;
+                if (id) {
+                  await SocialSupabase.deletePostsByUser(id);
+                  await SocialSupabase.deleteProfileById(id);
+                }
+              } catch (e) {
+                console.warn("Server delete failed", e);
+              }
+            }
+            // remove individual profile key
+            localStorage.removeItem("profile:" + username);
+            // remove from profiles map
+            const profilesMap = JSON.parse(
+              localStorage.getItem("profiles") || "{}",
+            );
+            if (profilesMap[username]) {
+              delete profilesMap[username];
+              localStorage.setItem("profiles", JSON.stringify(profilesMap));
+            }
+            // remove from users list
+            let usersList = JSON.parse(localStorage.getItem("users") || "[]");
+            const ui = usersList.indexOf(username);
+            if (ui > -1) {
+              usersList.splice(ui, 1);
+              localStorage.setItem("users", JSON.stringify(usersList));
+            }
+            // clear session if that user was active
+            if (localStorage.getItem("user") === username)
+              localStorage.removeItem("user");
+            alert("User deleted");
+            qs("editor").style.display = "none";
+            refreshList();
+            localStorage.setItem("profilesUpdatedAt", Date.now());
+          } catch (e) {
+            console.error(e);
+            alert("Could not delete");
           }
-          // remove individual profile key
-          localStorage.removeItem('profile:' + username);
-          // remove from profiles map
-          const profilesMap = JSON.parse(localStorage.getItem('profiles')||'{}'); if(profilesMap[username]){ delete profilesMap[username]; localStorage.setItem('profiles', JSON.stringify(profilesMap)); }
-          // remove from users list
-          let usersList = JSON.parse(localStorage.getItem('users')||'[]'); const ui = usersList.indexOf(username); if(ui>-1){ usersList.splice(ui,1); localStorage.setItem('users', JSON.stringify(usersList)); }
-          // clear session if that user was active
-          if(localStorage.getItem('user') === username) localStorage.removeItem('user');
-          alert('User deleted');
-          qs('editor').style.display='none';
-          refreshList();
-          localStorage.setItem('profilesUpdatedAt', Date.now());
-        }catch(e){ console.error(e); alert('Could not delete'); }
-      })();
-    });
+        })();
+      });
 
-    // reload when other windows update profiles
-    window.addEventListener('storage', (e)=>{ if(e.key === 'profilesUpdatedAt' || e.key === 'posts') refreshList(); });
+      // reload when other windows update profiles
+      window.addEventListener("storage", (e) => {
+        if (e.key === "profilesUpdatedAt" || e.key === "posts") refreshList();
+      });
 
-    refreshList();
-  </script>
-</body>
+      refreshList();
+    </script>
+  </body>
 </html>

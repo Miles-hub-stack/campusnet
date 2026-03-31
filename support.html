@@ -1,51 +1,89 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Support - MySocial</title>
-  <link rel="stylesheet" href="styles.css">
-  <script>
-    // Redirect to login if not signed in
-    (function(){
-      try{
-        const u = localStorage.getItem('user');
-        if(!u){ window.location.href = 'login.html'; }
-      }catch(e){ console.error(e); }
-    })();
-  </script>
-  <style>
-    .center{max-width:720px;margin:40px auto;padding:18px}
-    .card{background:#fff;padding:18px;border-radius:12px;border:1px solid #eef2f7}
-    .field{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
-    .btn{padding:10px 12px;border-radius:8px;border:0;background:#2b6cb0;color:#fff;cursor:pointer}
-  </style>
-</head>
-<body>
-  <div class="center">
-    <div class="card">
-      <h2>Contact Support</h2>
-      <p>If you need help, send a message and we'll get back to you (demo).</p>
-      <div class="field"><label>Your email</label><input id="email" type="email"></div>
-      <div class="field"><label>Message</label><textarea id="message" rows="4"></textarea></div>
-      <button id="send" class="btn">Send</button>
-      <div style="margin-top:12px;color:#718096">Demo only: messages are stored locally and not sent.</div>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Support - MySocial</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script>
+      // Redirect to login if not signed in
+      (function () {
+        try {
+          const u = localStorage.getItem("user");
+          if (!u) {
+            window.location.href = "login.html";
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      })();
+    </script>
+    <style>
+      .center {
+        max-width: 720px;
+        margin: 40px auto;
+        padding: 18px;
+      }
+      .card {
+        background: #fff;
+        padding: 18px;
+        border-radius: 12px;
+        border: 1px solid #eef2f7;
+      }
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-bottom: 12px;
+      }
+      .btn {
+        padding: 10px 12px;
+        border-radius: 8px;
+        border: 0;
+        background: #2b6cb0;
+        color: #fff;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="center">
+      <div class="card">
+        <h2>Contact Support</h2>
+        <p>
+          If you need help, send a message and we'll get back to you (demo).
+        </p>
+        <div class="field">
+          <label>Your email</label><input id="email" type="email" />
+        </div>
+        <div class="field">
+          <label>Message</label><textarea id="message" rows="4"></textarea>
+        </div>
+        <button id="send" class="btn">Send</button>
+        <div style="margin-top: 12px; color: #718096">
+          Demo only: messages are stored locally and not sent.
+        </div>
+      </div>
     </div>
-  </div>
 
-  <script>
-    document.getElementById('send').addEventListener('click', ()=>{
-      const e = document.getElementById('email').value.trim();
-      const m = document.getElementById('message').value.trim();
-      if(!e || !m) return alert('Provide email and message');
-      try{
-        const inbox = JSON.parse(localStorage.getItem('supportMessages')||'[]');
-        inbox.push({email:e,message:m,time:new Date().toISOString()});
-        localStorage.setItem('supportMessages', JSON.stringify(inbox));
-        alert('Message saved locally.');
-        document.getElementById('email').value=''; document.getElementById('message').value='';
-      }catch(e){ alert('Unable to save message'); }
-    });
-  </script>
-</body>
+    <script>
+      document.getElementById("send").addEventListener("click", () => {
+        const e = document.getElementById("email").value.trim();
+        const m = document.getElementById("message").value.trim();
+        if (!e || !m) return alert("Provide email and message");
+        try {
+          const inbox = JSON.parse(
+            localStorage.getItem("supportMessages") || "[]",
+          );
+          inbox.push({ email: e, message: m, time: new Date().toISOString() });
+          localStorage.setItem("supportMessages", JSON.stringify(inbox));
+          alert("Message saved locally.");
+          document.getElementById("email").value = "";
+          document.getElementById("message").value = "";
+        } catch (e) {
+          alert("Unable to save message");
+        }
+      });
+    </script>
+  </body>
 </html>

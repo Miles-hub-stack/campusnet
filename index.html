@@ -1,79 +1,143 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Social Feed - Demo</title>
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-  <header class="nav">
-    <div class="nav-left">
-      <div class="logo">CampusNet</div>
-    </div>
-    <div class="nav-right">
-      <button class="icon-btn profile" aria-label="Profile">
-        <img src="/CampusNet.png" alt="profile">
-      </button>
-      <a href="admin.html" id="adminLink" class="primary" style="display:none;margin-right:8px;background:#fff;color:#2b6cb0;border:1px solid #dbeafe;padding:6px 10px;border-radius:8px;text-decoration:none;">Admin</a>
-      <a href="profile.html" id="profileLink" class="primary" style="margin-right:8px;background:#fff;color:#2b6cb0;border:1px solid #dbeafe;padding:6px 10px;border-radius:8px;text-decoration:none;">Profile</a>
-      <button id="logoutBtn" class="primary" style="margin-left:8px;background:#fff;color:#2b6cb0;border:1px solid #dbeafe;">Logout</button>
-    </div>
-  </header>
-
-  <main class="container">
-    <section class="create-post">
-      <textarea id="postText" placeholder="What's happening?" rows="3"></textarea>
-      <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
-        <input id="mediaFile" type="file" accept="image/*,video/*">
-        <div id="mediaPreview" aria-hidden="true"></div>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Social Feed - Demo</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="nav">
+      <div class="nav-left">
+        <div class="logo">CampusNet</div>
       </div>
-      <div class="create-actions">
-        <div class="char-count" id="charCount">0</div>
-        <button id="postBtn" class="primary">Post</button>
+      <div class="nav-right">
+        <button class="icon-btn profile" aria-label="Profile">
+          <img src="/CampusNet.png" alt="profile" />
+        </button>
+        <a
+          href="admin.html"
+          id="adminLink"
+          class="primary"
+          style="
+            display: none;
+            margin-right: 8px;
+            background: #fff;
+            color: #2b6cb0;
+            border: 1px solid #dbeafe;
+            padding: 6px 10px;
+            border-radius: 8px;
+            text-decoration: none;
+          "
+          >Admin</a
+        >
+        <a
+          href="profile.html"
+          id="profileLink"
+          class="primary"
+          style="
+            margin-right: 8px;
+            background: #fff;
+            color: #2b6cb0;
+            border: 1px solid #dbeafe;
+            padding: 6px 10px;
+            border-radius: 8px;
+            text-decoration: none;
+          "
+          >Profile</a
+        >
+        <button
+          id="logoutBtn"
+          class="primary"
+          style="
+            margin-left: 8px;
+            background: #fff;
+            color: #2b6cb0;
+            border: 1px solid #dbeafe;
+          "
+        >
+          Logout
+        </button>
       </div>
-    </section>
+    </header>
 
-    <section class="feed" id="feed">
-      <!-- Posts injected here -->
-    </section>
-  </main>
-
-  <template id="postTemplate">
-    <article class="post-card">
-      <header class="post-header">
-        <img class="avatar" src="" alt="avatar">
-        <div class="post-meta">
-          <div class="name">User</div> 
-          <div class="time">just now</div>
+    <main class="container">
+      <section class="create-post">
+        <textarea
+          id="postText"
+          placeholder="What's happening?"
+          rows="3"
+        ></textarea>
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 8px;
+          "
+        >
+          <input id="mediaFile" type="file" accept="image/*,video/*" />
+          <div id="mediaPreview" aria-hidden="true"></div>
         </div>
-      </header>
-      <div class="post-body"></div>
-      <footer class="post-footer">
-        <button class="action like-btn">👍 <span class="likes">0</span></button>
-        <button class="action comment-btn">💬 <span class="comments">0</span></button>
-      </footer>
-      <div class="comment-area hidden">
-        <input type="text" class="comment-input" placeholder="Write a comment...">
-        <button class="submit-comment">Reply</button>
-      </div>
-    </article>
-  </template>
+        <div class="create-actions">
+          <div class="char-count" id="charCount">0</div>
+          <button id="postBtn" class="primary">Post</button>
+        </div>
+      </section>
 
-  <script src="supabase-client.js"></script>
-  <script src="app.js"></script>
-  <script>
-    (async function(){
-      try{
-        if(window.SocialSupabase){
-          const u = await SocialSupabase.getUser();
-          const user = u.data?.user;
-          if(!user && !localStorage.getItem('user')){ window.location.href = 'login.html'; }
-        } else {
-          const u = localStorage.getItem('user'); if(!u) window.location.href = 'login.html';
+      <section class="feed" id="feed">
+        <!-- Posts injected here -->
+      </section>
+    </main>
+
+    <template id="postTemplate">
+      <article class="post-card">
+        <header class="post-header">
+          <img class="avatar" src="" alt="avatar" />
+          <div class="post-meta">
+            <div class="name">User</div>
+            <div class="time">just now</div>
+          </div>
+        </header>
+        <div class="post-body"></div>
+        <footer class="post-footer">
+          <button class="action like-btn">
+            👍 <span class="likes">0</span>
+          </button>
+          <button class="action comment-btn">
+            💬 <span class="comments">0</span>
+          </button>
+        </footer>
+        <div class="comment-area hidden">
+          <input
+            type="text"
+            class="comment-input"
+            placeholder="Write a comment..."
+          />
+          <button class="submit-comment">Reply</button>
+        </div>
+      </article>
+    </template>
+
+    <script src="supabase-client.js"></script>
+    <script src="app.js"></script>
+    <script>
+      (async function () {
+        try {
+          if (window.SocialSupabase) {
+            const u = await SocialSupabase.getUser();
+            const user = u.data?.user;
+            if (!user && !localStorage.getItem("user")) {
+              window.location.href = "login.html";
+            }
+          } else {
+            const u = localStorage.getItem("user");
+            if (!u) window.location.href = "login.html";
+          }
+        } catch (e) {
+          console.error("Auth check failed", e);
         }
-      }catch(e){ console.error('Auth check failed', e); }
-    })();
-  </script>
-</body>
+      })();
+    </script>
+  </body>
 </html>
