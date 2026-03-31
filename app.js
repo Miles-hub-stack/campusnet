@@ -73,13 +73,23 @@ function updateCreateUI(isAuthenticated){
 // initialize UI state (assume unauthenticated until sync finishes)
 updateCreateUI(false);
 
-function createPostElement(post){
+function createPostElement(post, profiles){
   const node = template.content.cloneNode(true);
-  // author/profile
-  const author = post.author || 'Anonymous';
-  const meta = getProfile(author);
-  node.querySelector('.name').textContent = (meta && meta.name) ? meta.name : author;
-  node.querySelector('.avatar').src = (meta && meta.avatar) ? meta.avatar : 'https://via.placeholder.com/48';
+  // author/profile: prefer server profiles if available
+  const authorId = post.user_id || post.author || null;
+  let meta = null;
+  if(profiles && authorId && profiles[authorId]) meta = profiles[authorId];
+  // if server profile not found, try by username key
+  if(!meta && profiles && post.author && profiles[post.author]) meta = profiles[post.author];
+  // fallback to localStorage profile:<username>
+  if(!meta){
+    const authorName = post.author || authorId || 'Anonymous';
+    meta = getProfile(authorName);
+  }
+  const displayName = (meta && (meta.name || meta.username)) ? (meta.name || meta.username) : (post.author || authorId || 'Anonymous');
+  node.querySelector('.name').textContent = displayName;
+  const avatarSrc = (meta && meta.avatar) ? meta.avatar : 'https://via.placeholder.com/48';
+  node.querySelector('.avatar').src = avatarSrc;
   // body text
   const body = node.querySelector('.post-body');
   body.textContent = post.text || '';
@@ -251,7 +261,7 @@ async function renderPosts(){
   try{ const localProfiles = JSON.parse(localStorage.getItem('profiles')||'{}'); localProfiles['System'] = localProfiles['System'] || {name:'System', avatar:'CampusNet.png', bio:''}; localProfiles['System'].avatar = 'CampusNet.png'; localStorage.setItem('profiles', JSON.stringify(localProfiles)); localStorage.setItem('profile:System', JSON.stringify(localProfiles['System'])); }catch(e){}
 
   postsArr.forEach(post=>{
-    const node = createPostElement(post);
+    const node = createPostElement(post, profiles);
     const likesEl = node.querySelector('.likes');
     const likeBtn = node.querySelector('.like-btn');
     likesEl.textContent = post.likesCount || 0;
