@@ -271,7 +271,11 @@ async function renderPosts(){
           if(add.error) throw add.error;
         }
         await renderPosts();
-      }catch(e){ console.error('Like error', e); alert('Could not update like'); }
+      }catch(e){
+        console.error('Like error', e);
+        const msg = e && (e.message || e.msg || e.error || e.detail) ? (e.message || e.msg || e.error || e.detail) : (typeof e === 'string' ? e : JSON.stringify(e));
+        alert('Could not update like: ' + msg);
+      }
     });
 
     const commentBtn = node.querySelector('.comment-btn');
@@ -286,7 +290,11 @@ async function renderPosts(){
         const res = await SocialSupabase.addComment(post.id, v);
         if(res.error) throw res.error;
         await renderPosts();
-      }catch(e){ console.error('Comment error', e); alert('Could not add comment'); }
+      }catch(e){
+        console.error('Comment error', e);
+        const msg = e && (e.message || e.msg || e.error || e.detail) ? (e.message || e.msg || e.error || e.detail) : (typeof e === 'string' ? e : JSON.stringify(e));
+        alert('Could not add comment: ' + msg);
+      }
     });
 
     const footer = node.querySelector('.post-footer');
