@@ -45,6 +45,46 @@ CREATE POLICY "Allow delete by owner" ON public.posts
   FOR DELETE
   USING (user_id = auth.uid());
 
+-- Likes table
+CREATE TABLE IF NOT EXISTS public.likes (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  post_id uuid NOT NULL REFERENCES public.posts(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  created_at timestamptz DEFAULT now(),
+  UNIQUE(post_id, user_id)
+);
+
+ALTER TABLE public.likes ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow select likes" ON public.likes
+  FOR SELECT
+  USING (true);
+CREATE POLICY "Allow insert likes" ON public.likes
+  FOR INSERT
+  WITH CHECK (auth.uid() IS NOT NULL AND user_id = auth.uid());
+CREATE POLICY "Allow delete likes by owner" ON public.likes
+  FOR DELETE
+  USING (user_id = auth.uid());
+
+-- Comments table
+CREATE TABLE IF NOT EXISTS public.comments (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  post_id uuid NOT NULL REFERENCES public.posts(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  content text NOT NULL,
+  created_at timestamptz DEFAULT now()
+);
+
+ALTER TABLE public.comments ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow select comments" ON public.comments
+  FOR SELECT
+  USING (true);
+CREATE POLICY "Allow insert comments" ON public.comments
+  FOR INSERT
+  WITH CHECK (auth.uid() IS NOT NULL AND user_id = auth.uid());
+CREATE POLICY "Allow delete comments by owner" ON public.comments
+  FOR DELETE
+  USING (user_id = auth.uid());
+
 -- Ensure profiles table can be managed by your app (you may add RLS per requirements)
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow profile upsert by owner" ON public.profiles

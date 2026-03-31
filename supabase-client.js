@@ -129,10 +129,57 @@
       return new Promise((resolve)=>{
         _enqueue(async ()=>{
           try{
-            // fetch posts ordered by newest
-            const { data, error } = await _sb.from('posts').select('*').order('created_at', { ascending: false });
+            // fetch posts ordered by newest, including nested likes and comments
+            const { data, error } = await _sb.from('posts')
+              .select('id, content, user_id, created_at, likes(user_id), comments(id, user_id, content, created_at)')
+              .order('created_at', { ascending: false });
             resolve({ data, error });
           }catch(e){ resolve({ error: e }); }
+        });
+      });
+    },
+
+    async addLike(post_id){
+      return new Promise((resolve)=>{
+        _enqueue(async ()=>{
+          try{
+            const u = await _sb.auth.getUser(); const user = u.data?.user; if(!user) return resolve({ error: 'Not authenticated' });
+            const { data, error } = await _sb.from('likes').insert([{ post_id, user_id: user.id }]);
+            resolve({ data, error });
+          }catch(e){ resolve({ error: e }); }
+        });
+      });
+    },
+
+    async removeLike(post_id){
+      return new Promise((resolve)=>{
+        _enqueue(async ()=>{
+          try{
+            const u = await _sb.auth.getUser(); const user = u.data?.user; if(!user) return resolve({ error: 'Not authenticated' });
+            const { data, error } = await _sb.from('likes').delete().match({ post_id, user_id: user.id });
+            resolve({ data, error });
+          }catch(e){ resolve({ error: e }); }
+        });
+      });
+    },
+
+    async addComment(post_id, content){
+      return new Promise((resolve)=>{
+        _enqueue(async ()=>{
+          try{
+            const u = await _sb.auth.getUser(); const user = u.data?.user; if(!user) return resolve({ error: 'Not authenticated' });
+            const payload = { post_id, user_id: user.id, content };
+            const { data, error } = await _sb.from('comments').insert([payload]);
+            resolve({ data, error });
+          }catch(e){ resolve({ error: e }); }
+        });
+      });
+    },
+
+    async fetchComments(post_id){
+      return new Promise((resolve)=>{
+        _enqueue(async ()=>{
+          try{ const { data, error } = await _sb.from('comments').select('*').eq('post_id', post_id).order('created_at', { ascending: true }); resolve({ data, error }); }catch(e){ resolve({ error: e }); }
         });
       });
     },

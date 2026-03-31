@@ -86,7 +86,7 @@ function createPostElement(post){
   // time
   const timeEl = node.querySelector('.time'); if(timeEl) timeEl.textContent = post.time ? new Date(post.time).toLocaleString() : new Date().toLocaleString();
   // likes/comments placeholders
-  node.querySelector('.likes').textContent = (post.likedUsers && post.likedUsers.length) || post.likes || 0;
+  node.querySelector('.likes').textContent = post.likesCount || 0;
   node.querySelector('.comments').textContent = (post.comments && post.comments.length) || 0;
 
   // render media (if any)
@@ -202,15 +202,24 @@ async function renderPosts(){
     if(resp.error) throw resp.error;
     const profilesResp = await SocialSupabase.getAllProfiles();
     const profiles = (profilesResp.data || []).reduce((m, p)=>{ m[p.id] = p; m[p.username] = p; return m; }, {});
-    postsArr = (resp.data || []).map(r=>({
-      id: r.id,
-      author: (profiles[r.user_id] && profiles[r.user_id].username) || (profiles[r.user_id] && profiles[r.user_id].name) || r.user_id,
-      text: r.content || '',
-      media: null,
-      likedUsers: [],
-      comments: [],
-      time: r.created_at || new Date().toISOString()
-    }));
+    // determine current Supabase user id (if signed in) to know liked state
+    let supUserId = null;
+    try{ const uresp = await SocialSupabase.getUser(); supUserId = uresp.data?.user?.id || null; }catch(e){}
+
+    postsArr = (resp.data || []).map(r=>{
+      const likes = Array.isArray(r.likes) ? r.likes.map(x=>x.user_id || x.userId || x.id) : [];
+      const comments = Array.isArray(r.comments) ? r.comments.map(c=>({ author: (profiles[c.user_id] && profiles[c.user_id].username) || (profiles[c.user_id] && profiles[c.user_id].name) || c.user_id, text: c.content || '', time: c.created_at || new Date().toISOString() })) : [];
+      return {
+        id: r.id,
+        author: (profiles[r.user_id] && profiles[r.user_id].username) || (profiles[r.user_id] && profiles[r.user_id].name) || r.user_id,
+        text: r.content || '',
+        media: null,
+        likedBy: likes,
+        likesCount: likes.length,
+        comments: comments,
+        time: r.created_at || new Date().toISOString()
+      };
+    });
   }catch(e){
     console.error('Failed to load posts from Supabase', e);
     feed.innerHTML = '<div style="padding:20px;color:#666">Unable to load feed.</div>';
@@ -221,22 +230,27 @@ async function renderPosts(){
   try{ const localProfiles = JSON.parse(localStorage.getItem('profiles')||'{}'); localProfiles['System'] = localProfiles['System'] || {name:'System', avatar:'CampusNet.png', bio:''}; localProfiles['System'].avatar = 'CampusNet.png'; localStorage.setItem('profiles', JSON.stringify(localProfiles)); localStorage.setItem('profile:System', JSON.stringify(localProfiles['System'])); }catch(e){}
 
   postsArr.forEach(post=>{
-    if(!Array.isArray(post.likedUsers)) post.likedUsers = [];
     const node = createPostElement(post);
     const likesEl = node.querySelector('.likes');
     const likeBtn = node.querySelector('.like-btn');
-    likesEl.textContent = (post.likedUsers && post.likedUsers.length) || 0;
-    if(currentUser && post.likedUsers.indexOf(currentUser) > -1) likeBtn.classList.add('liked');
+    likesEl.textContent = post.likesCount || 0;
+    if(supUserId && Array.isArray(post.likedBy) && post.likedBy.indexOf(supUserId) > -1) likeBtn.classList.add('liked');
     const commentsEl = node.querySelector('.comments'); commentsEl.textContent = (post.comments||[]).length;
 
-    // Like button: client-only behavior until server-side likes implemented
-    likeBtn.addEventListener('click', ()=>{
-      if(!currentUser) return alert('Sign in to like posts');
-      if(!post.likedUsers) post.likedUsers = [];
-      const i = post.likedUsers.indexOf(currentUser);
-      if(i>-1) post.likedUsers.splice(i,1); else post.likedUsers.push(currentUser);
-      likesEl.textContent = post.likedUsers.length;
-      likeBtn.classList.toggle('liked');
+    // Like button: call server API then refresh feed
+    likeBtn.addEventListener('click', async ()=>{
+      try{
+        const uresp = await SocialSupabase.getUser(); const sup = uresp.data?.user; if(!sup) return alert('Sign in to like posts');
+        const isLiked = Array.isArray(post.likedBy) && sup.id && post.likedBy.indexOf(sup.id) > -1;
+        if(isLiked){
+          const rem = await SocialSupabase.removeLike(post.id);
+          if(rem.error) throw rem.error;
+        } else {
+          const add = await SocialSupabase.addLike(post.id);
+          if(add.error) throw add.error;
+        }
+        await renderPosts();
+      }catch(e){ console.error('Like error', e); alert('Could not update like'); }
     });
 
     const commentBtn = node.querySelector('.comment-btn');
@@ -244,8 +258,14 @@ async function renderPosts(){
     const submitComment = node.querySelector('.submit-comment');
     const commentInput = node.querySelector('.comment-input');
     commentBtn.addEventListener('click', ()=> commentArea.classList.toggle('hidden'));
-    submitComment.addEventListener('click', ()=>{
-      const v = commentInput.value.trim(); if(!v) return; post.comments = post.comments || []; post.comments.push({ author: currentUser, text: v, time: new Date().toISOString() }); commentsEl.textContent = post.comments.length; commentInput.value = '';
+    submitComment.addEventListener('click', async ()=>{
+      const v = commentInput.value.trim(); if(!v) return;
+      try{
+        const uresp = await SocialSupabase.getUser(); const sup = uresp.data?.user; if(!sup) return alert('Sign in to comment');
+        const res = await SocialSupabase.addComment(post.id, v);
+        if(res.error) throw res.error;
+        await renderPosts();
+      }catch(e){ console.error('Comment error', e); alert('Could not add comment'); }
     });
 
     const footer = node.querySelector('.post-footer');
