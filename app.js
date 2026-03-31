@@ -105,6 +105,10 @@ postBtn.addEventListener('click', async ()=>{
   // Save post to Supabase (no localStorage fallback)
   try{
     if(window.SocialSupabase){
+      // ensure the user is authenticated with Supabase before attempting insert
+      const uresp = await SocialSupabase.getUser();
+      const supUser = uresp.data?.user;
+      if(!supUser){ alert('Please sign in to create a post.'); return; }
       const res = await SocialSupabase.addPost({ content: post.text });
       if(res.error){ throw res.error; }
       await renderPosts();

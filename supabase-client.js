@@ -117,7 +117,7 @@
             const user = userResp.data?.user;
             if(!user) return resolve({ error: 'Not authenticated' });
             const user_id = user.id;
-            const payload = { content, user_id };
+            const payload = { content, user_id, created_at: new Date().toISOString() };
             const { data, error } = await _sb.from('posts').insert([payload]);
             resolve({ data, error });
           }catch(e){ resolve({ error: e }); }
