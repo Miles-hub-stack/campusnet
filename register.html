@@ -17,6 +17,8 @@
     <div class="card">
       <h2 style="margin-bottom:8px">Create account</h2>
       <div class="field"><label>Name</label><input id="name" type="text" placeholder="Full name"></div>
+      <div class="field"><label>Email</label><input id="email" type="email" placeholder="you@example.com"></div>
+      <div class="field"><label>Password</label><input id="password" type="password" placeholder="Choose a password"></div>
       <div class="field"><label>Username</label><input id="username" type="text" placeholder="username (unique)"></div>
       <div class="field"><label>Avatar</label><input id="avatarFile" type="file" accept="image/*"><div id="avatarPreview" style="margin-top:8px"></div></div>
       <div class="field"><label>Bio</label><textarea id="bio" rows="3" placeholder="A short bio"></textarea></div>
@@ -25,6 +27,7 @@
     </div>
   </div>
 
+  <script src="supabase-client.js"></script>
   <script>
     const avatarFile = document.getElementById('avatarFile');
     const avatarPreview = document.getElementById('avatarPreview');
@@ -34,29 +37,35 @@
       const r = new FileReader(); r.onload = ev=>{ avatarFile._dataUrl = ev.target.result; avatarPreview.innerHTML = `<img src="${ev.target.result}" style="max-width:120px;border-radius:8px">`; }; r.readAsDataURL(f);
     });
 
-    document.getElementById('registerBtn').addEventListener('click', ()=>{
+    document.getElementById('registerBtn').addEventListener('click', async ()=>{
       const name = document.getElementById('name').value.trim();
       const username = document.getElementById('username').value.trim();
       const bio = document.getElementById('bio').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
       if(!username) return alert('Choose a username');
+      if(!email || !password) return alert('Enter email and password');
       try{
-        // load profiles map
+        // simple local-username check to avoid duplicates in demo profiles map
         const profiles = JSON.parse(localStorage.getItem('profiles') || '{}');
         if(profiles[username]) return alert('Username taken');
         const avatarData = (avatarFile && avatarFile._dataUrl) ? avatarFile._dataUrl : 'https://via.placeholder.com/48';
         const profile = {name: name || username, avatar: avatarData, bio};
-        // save individual profile key for backward compatibility
-        localStorage.setItem('profile:' + username, JSON.stringify(profile));
-        // update profiles map
-        profiles[username] = profile;
-        localStorage.setItem('profiles', JSON.stringify(profiles));
-        // update users list
-        const users = JSON.parse(localStorage.getItem('users') || '[]');
-        if(!users.includes(username)){
-          users.push(username);
-          localStorage.setItem('users', JSON.stringify(users));
-        }
-        // set active session
+
+        // register with Supabase and create profile row
+        const resp = await SocialSupabase.register(email, password, username, { name: profile.name, avatar: profile.avatar, bio: profile.bio });
+        if(resp.error){ console.error(resp.error); return alert('Registration failed: ' + (resp.error.message || resp.error)); }
+
+        // keep local demo compatibility: save profiles map and users list locally too
+        try{
+          localStorage.setItem('profile:' + username, JSON.stringify(profile));
+          profiles[username] = profile;
+          localStorage.setItem('profiles', JSON.stringify(profiles));
+          const users = JSON.parse(localStorage.getItem('users') || '[]');
+          if(!users.includes(username)){ users.push(username); localStorage.setItem('users', JSON.stringify(users)); }
+        }catch(e){ console.warn('local profile save failed', e); }
+
+        // set active session locally for UI compatibility
         localStorage.setItem('user', username);
         window.location.href = 'index.html';
       }catch(e){ console.error(e); alert('Unable to register'); }

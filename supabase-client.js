@@ -56,17 +56,24 @@
 
   const API = {
     getClient(){ return _sb; },
-    async register(email, password, username){
+    async register(email, password, username, profile = {}){
       return new Promise((resolve)=>{
         _enqueue(async ()=>{
           try{
             // sign up with metadata
             const { data, error } = await _sb.auth.signUp({ email, password }, { data: { username } });
             if(error) return resolve({ error });
-            // optionally create a profile record in "profiles" table if you have one
+            // optionally create or update a profile record in "profiles" table if you have one
             try{
-              await _sb.from('profiles').upsert({ id: data.user?.id || null, username, name: username, avatar: null, bio: null });
-            }catch(e){}
+              const profileRow = {
+                id: data.user?.id || null,
+                username,
+                name: profile.name || username,
+                avatar: profile.avatar || null,
+                bio: profile.bio || null
+              };
+              await _sb.from('profiles').upsert(profileRow);
+            }catch(e){ console.warn('profiles upsert failed', e); }
             resolve({ data });
           }catch(e){ resolve({ error: e }); }
         });

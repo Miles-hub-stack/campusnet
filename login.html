@@ -18,8 +18,12 @@
     <div class="card">
       <h2 style="margin-bottom:10px">Sign in</h2>
       <div class="field">
-        <label for="username">Username</label>
-        <input id="username" type="text" placeholder="Your name" />
+        <label for="email">Email</label>
+        <input id="email" type="email" placeholder="you@example.com" />
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input id="password" type="password" placeholder="Choose a password" />
       </div>
       <div id="loginMsg" style="color:#c0262e;margin-top:8px;font-size:0.95rem"></div>
       <button id="loginBtn" class="btn">Login</button>
@@ -31,35 +35,44 @@
     </div>
   </div>
 
-  <script>
-    // If already logged in, go to index
-    (function(){
-      try{
-        if(localStorage.getItem('user')){
+    <script src="supabase-client.js"></script>
+    <script>
+      // If already logged in locally or via Supabase, go to index
+      (async function(){
+        try{
+          if(localStorage.getItem('user')){ window.location.href = 'index.html'; return; }
+          // check supabase session
+          if(window.SocialSupabase){
+            const { data } = await SocialSupabase.getUser();
+            const user = data?.user;
+            if(user){ window.location.href = 'index.html'; }
+          }
+        }catch(e){}
+      })();
+
+      const loginBtn = document.getElementById('loginBtn');
+      const emailEl = document.getElementById('email');
+      const passwordEl = document.getElementById('password');
+      const loginMsg = document.getElementById('loginMsg');
+
+      loginBtn.addEventListener('click', async ()=>{
+        const email = emailEl.value.trim();
+        const password = passwordEl.value;
+        loginMsg.textContent = '';
+        if(!email || !password){ loginMsg.textContent = 'Enter email and password'; return; }
+        try{
+          const resp = await SocialSupabase.login(email, password);
+          if(resp.error){ loginMsg.textContent = resp.error.message || String(resp.error); return; }
+          // fetch user info and set local session (for compatibility with demo UI)
+          const u = await SocialSupabase.getUser();
+          const supUser = u.data?.user;
+          const username = supUser?.user_metadata?.username || (supUser?.email ? supUser.email.split('@')[0] : null);
+          if(username) localStorage.setItem('user', username);
           window.location.href = 'index.html';
-        }
-      }catch(e){}
-    })();
+        }catch(e){ loginMsg.textContent = 'Login failed'; console.error(e); }
+      });
 
-    const loginBtn = document.getElementById('loginBtn');
-    const username = document.getElementById('username');
-
-    const loginMsg = document.getElementById('loginMsg');
-    loginBtn.addEventListener('click', ()=>{
-      const v = username.value.trim();
-      loginMsg.textContent = '';
-      if(!v){ loginMsg.textContent = 'Enter a username'; return; }
-      try{
-        const users = JSON.parse(localStorage.getItem('users')||'[]');
-        const profiles = JSON.parse(localStorage.getItem('profiles')||'{}');
-        const exists = users.includes(v) || Boolean(profiles[v]) || Boolean(localStorage.getItem('profile:' + v));
-        if(!exists){ loginMsg.textContent = 'Account not found. Register before you can login.'; return; }
-        localStorage.setItem('user', v);
-        window.location.href = 'index.html';
-      }catch(e){ alert('Unable to save session'); }
-    });
-
-    username.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') loginBtn.click(); });
-  </script>
+      [emailEl, passwordEl].forEach(el=>el.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') loginBtn.click(); }));
+    </script>
 </body>
 </html>
