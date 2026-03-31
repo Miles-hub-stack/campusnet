@@ -147,7 +147,13 @@ postBtn.addEventListener('click', async ()=>{
       if(res.error){
         console.error('Add post error', res.error);
         const msg = res.error.message || (typeof res.error === 'string' ? res.error : JSON.stringify(res.error));
-        alert('Could not save post: ' + msg);
+        // Detect missing table schema cache error and give actionable guidance
+        if(msg.includes("Could not find the table 'public.posts' in the schema cache")){
+          alert('Could not save post: posts table not found in Supabase. Run the SQL schema script (supabase-schema.sql) in your Supabase project SQL editor, then refresh this page.');
+          console.error('Run supabase-schema.sql (in project root) in your Supabase SQL editor to create the posts table and RLS policies.');
+        } else {
+          alert('Could not save post: ' + msg);
+        }
         return;
       }
       await renderPosts();
