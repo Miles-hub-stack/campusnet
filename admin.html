@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Admin - MySocial</title>
   <link rel="stylesheet" href="styles.css">
+  <script src="supabase-client.js"></script>
   <script>
     // Redirect to login if not signed in
     (function(){
@@ -132,48 +133,58 @@
     });
 
     qs('saveProfileBtn').addEventListener('click', ()=>{
-      const username = qs('editor').dataset.user; if(!username) return;
-      const name = qs('editName').value.trim();
-      const bio = qs('editBio').value.trim();
-      const avatar = qs('editAvatar').dataset.dataUrl || qs('editAvatar').src || 'https://via.placeholder.com/96';
-      try{
-        const profilesMap = JSON.parse(localStorage.getItem('profiles')||'{}');
-        profilesMap[username] = {name: name || username, avatar, bio};
-        localStorage.setItem('profiles', JSON.stringify(profilesMap));
-        localStorage.setItem('profile:' + username, JSON.stringify(profilesMap[username]));
-        alert('Profile saved');
-        refreshList();
-        // notify feed page (if open) by writing a flag; feed will read profiles on render
-        localStorage.setItem('profilesUpdatedAt', Date.now());
-      }catch(e){ console.error(e); alert('Could not save'); }
+      (async function(){
+        const username = qs('editor').dataset.user; if(!username) return;
+        const name = qs('editName').value.trim();
+        const bio = qs('editBio').value.trim();
+        const avatar = qs('editAvatar').dataset.dataUrl || qs('editAvatar').src || 'https://via.placeholder.com/96';
+        try{
+          // attempt server update
+          if(window.SocialSupabase){
+            try{
+              const existing = await SocialSupabase.getProfileByUsername(username);
+              const id = existing.data?.id || null;
+              await SocialSupabase.updateProfile({ id, username, name: name || username, avatar, bio });
+            }catch(e){ console.warn('Server profile upsert failed', e); }
+          }
+          const profilesMap = JSON.parse(localStorage.getItem('profiles')||'{}');
+          profilesMap[username] = {name: name || username, avatar, bio};
+          localStorage.setItem('profiles', JSON.stringify(profilesMap));
+          localStorage.setItem('profile:' + username, JSON.stringify(profilesMap[username]));
+          alert('Profile saved');
+          refreshList();
+          localStorage.setItem('profilesUpdatedAt', Date.now());
+        }catch(e){ console.error(e); alert('Could not save'); }
+      })();
     });
 
     qs('deleteProfileBtn').addEventListener('click', ()=>{
-      const username = qs('editor').dataset.user; if(!username) return;
-      if(!confirm('Delete user ' + username + ' and all their posts?')) return;
-      try{
-        // remove individual profile key
-        localStorage.removeItem('profile:' + username);
-        // remove from profiles map
-        const profilesMap = JSON.parse(localStorage.getItem('profiles')||'{}'); if(profilesMap[username]){ delete profilesMap[username]; localStorage.setItem('profiles', JSON.stringify(profilesMap)); }
-        // remove from users list
-        let usersList = JSON.parse(localStorage.getItem('users')||'[]'); const ui = usersList.indexOf(username); if(ui>-1){ usersList.splice(ui,1); localStorage.setItem('users', JSON.stringify(usersList)); }
-        // remove authored posts and sanitize others
-        const posts = JSON.parse(localStorage.getItem('posts')||'[]');
-        const updated = posts.filter(p => p.author !== username).map(p => {
-          if(Array.isArray(p.likedUsers)) p.likedUsers = p.likedUsers.filter(u => u !== username);
-          if(Array.isArray(p.comments)) p.comments = p.comments.filter(c => c.author !== username);
-          p.likes = (p.likedUsers && p.likedUsers.length) || (p.likes||0);
-          return p;
-        });
-        localStorage.setItem('posts', JSON.stringify(updated));
-        // clear session if that user was active
-        if(localStorage.getItem('user') === username) localStorage.removeItem('user');
-        alert('User deleted');
-        qs('editor').style.display='none';
-        refreshList();
-        localStorage.setItem('profilesUpdatedAt', Date.now());
-      }catch(e){ console.error(e); alert('Could not delete'); }
+      (async function(){
+        const username = qs('editor').dataset.user; if(!username) return;
+        if(!confirm('Delete user ' + username + ' and all their posts?')) return;
+        try{
+          // attempt server deletion of profile + posts
+          if(window.SocialSupabase){
+            try{
+              const resp = await SocialSupabase.getProfileByUsername(username);
+              const id = resp.data?.id || null;
+              if(id){ await SocialSupabase.deletePostsByUser(id); await SocialSupabase.deleteProfileById(id); }
+            }catch(e){ console.warn('Server delete failed', e); }
+          }
+          // remove individual profile key
+          localStorage.removeItem('profile:' + username);
+          // remove from profiles map
+          const profilesMap = JSON.parse(localStorage.getItem('profiles')||'{}'); if(profilesMap[username]){ delete profilesMap[username]; localStorage.setItem('profiles', JSON.stringify(profilesMap)); }
+          // remove from users list
+          let usersList = JSON.parse(localStorage.getItem('users')||'[]'); const ui = usersList.indexOf(username); if(ui>-1){ usersList.splice(ui,1); localStorage.setItem('users', JSON.stringify(usersList)); }
+          // clear session if that user was active
+          if(localStorage.getItem('user') === username) localStorage.removeItem('user');
+          alert('User deleted');
+          qs('editor').style.display='none';
+          refreshList();
+          localStorage.setItem('profilesUpdatedAt', Date.now());
+        }catch(e){ console.error(e); alert('Could not delete'); }
+      })();
     });
 
     // reload when other windows update profiles

@@ -30,7 +30,7 @@ await SocialSupabase.register('email@example.com', 'password123', 'username');
 // login
 await SocialSupabase.login('email@example.com','password123');
 // add post
-await SocialSupabase.addPost({ text: 'Hello from Supabase', media: null });
+await SocialSupabase.addPost({ content: 'Hello from Supabase' });
 // fetch posts
 const posts = await SocialSupabase.fetchPosts();
 console.log(posts);

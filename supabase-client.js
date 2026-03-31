@@ -5,7 +5,7 @@
   - register(email,password,username)
   - login(email,password)
   - logout()
-  - addPost({text, media})  // expects a `posts` table (see notes)
+  - addPost({content})  // expects a `posts` table (see notes)
   - fetchPosts()
   - getUser()
   - redirectBasedOnAuth(home, login)
@@ -20,12 +20,10 @@
 
   Notes:
   - This wrapper uses Supabase Auth and the `posts` table. Create a `posts` table with columns:
-    - id (uuid or bigint)
-    - author_id (text)
-    - author_username (text)
-    - text (text)
-    - media (text) -- URL or data URL
-    - created_at (timestamp default now())
+    - id (uuid or serial primary key)
+    - content (text)
+    - user_id (uuid) -- references auth.users(id)
+    - created_at (timestamp with time zone default now())
   - For older browsers: include meta tags in your HTML head:
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -111,16 +109,15 @@
       });
     },
 
-    async addPost({ text, media }){
+    async addPost({ content }){
       return new Promise((resolve)=>{
         _enqueue(async ()=>{
           try{
             const userResp = await _sb.auth.getUser();
             const user = userResp.data?.user;
             if(!user) return resolve({ error: 'Not authenticated' });
-            const author_id = user.id;
-            const author_username = (user.user_metadata && user.user_metadata.username) || user.email || 'unknown';
-            const payload = { author_id, author_username, text, media, created_at: new Date().toISOString() };
+            const user_id = user.id;
+            const payload = { content, user_id };
             const { data, error } = await _sb.from('posts').insert([payload]);
             resolve({ data, error });
           }catch(e){ resolve({ error: e }); }
@@ -152,6 +149,17 @@
       });
     },
 
+    async getAllProfiles(){
+      return new Promise((resolve)=>{
+        _enqueue(async ()=>{
+          try{
+            const { data, error } = await _sb.from('profiles').select('*');
+            resolve({ data, error });
+          }catch(e){ resolve({ error: e }); }
+        });
+      });
+    },
+
     async updateProfile(profileRow){
       return new Promise((resolve)=>{
         _enqueue(async ()=>{
@@ -168,6 +176,28 @@
         _enqueue(async ()=>{
           try{
             const { data, error } = await _sb.from('profiles').delete().eq('id', id);
+            resolve({ data, error });
+          }catch(e){ resolve({ error: e }); }
+        });
+      });
+    },
+
+    async deletePostById(id){
+      return new Promise((resolve)=>{
+        _enqueue(async ()=>{
+          try{
+            const { data, error } = await _sb.from('posts').delete().eq('id', id);
+            resolve({ data, error });
+          }catch(e){ resolve({ error: e }); }
+        });
+      });
+    },
+
+    async deletePostsByUser(user_id){
+      return new Promise((resolve)=>{
+        _enqueue(async ()=>{
+          try{
+            const { data, error } = await _sb.from('posts').delete().eq('user_id', user_id);
             resolve({ data, error });
           }catch(e){ resolve({ error: e }); }
         });

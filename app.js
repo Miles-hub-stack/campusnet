@@ -102,18 +102,16 @@ postBtn.addEventListener('click', async ()=>{
     comments: [],
     time: new Date().toISOString()
   };
-  // try server save via Supabase, fallback to localStorage
+  // Save post to Supabase (no localStorage fallback)
   try{
     if(window.SocialSupabase){
-      const res = await SocialSupabase.addPost({ text: post.text, media: post.media });
+      const res = await SocialSupabase.addPost({ content: post.text });
       if(res.error){ throw res.error; }
-      // refresh feed from server
       await renderPosts();
     } else {
-      savePost(post);
-      renderPosts();
+      throw new Error('Supabase client unavailable');
     }
-  }catch(e){ console.warn('Server post failed, saving locally', e); savePost(post); renderPosts(); }
+  }catch(e){ console.error('Failed to save post to server', e); alert('Could not save post.'); }
   postText.value = '';
   charCount.textContent = 0;
   if(mediaFile){ mediaFile.value = ''; mediaFile._dataUrl = null; mediaPreview.innerHTML = ''; }
@@ -146,73 +144,50 @@ if(mediaFile){
 
 // sample initial posts
 // Persistence: load/save posts
-function loadPosts(){ try{ const p = localStorage.getItem('posts'); return p? JSON.parse(p): []; }catch(e){ return []; } }
-function saveAllPosts(arr){ try{ localStorage.setItem('posts', JSON.stringify(arr)); }catch(e){} }
-function savePost(post){ const arr = loadPosts(); arr.unshift(post); saveAllPosts(arr); }
-
-// Render posts: prefer Supabase.fetchPosts() when available, otherwise use localStorage
+// Render posts exclusively from Supabase (no localStorage persistence for posts)
 async function renderPosts(){
   feed.innerHTML = '';
   let postsArr = [];
-  if(window.SocialSupabase){
-    try{
-      const resp = await SocialSupabase.fetchPosts();
-      if(resp.error) throw resp.error;
-      // map server rows to local post shape
-      postsArr = (resp.data || []).map(r=>({
-        id: r.id || ('p_' + (new Date(r.created_at).getTime())),
-        author: r.author_username || r.author || 'unknown',
-        text: r.text || '',
-        media: r.media || null,
-        likedUsers: [],
-        comments: [],
-        time: r.created_at || new Date().toISOString()
-      }));
-    }catch(e){ console.warn('Failed to fetch posts from Supabase', e); postsArr = loadPosts(); }
-  } else {
-    postsArr = loadPosts();
-  }
-
-  if(postsArr.length===0){
-    const samples = [
-      {id:'s1',author:'System',text:'Welcome to MySocial — this is a responsive demo feed!',media:null,likes:0,comments:[],time:new Date().toISOString()},
-      {id:'s2',author:'System',text:'Try creating a post, liking, or adding a comment.',media:null,likes:0,comments:[],time:new Date().toISOString()}
-    ];
-    samples.forEach(p=> savePost(p));
-  }
-
-  // ensure System profile uses CampusNet.png as avatar
   try{
-    const profiles = JSON.parse(localStorage.getItem('profiles')||'{}');
-    profiles['System'] = profiles['System'] || {name:'System', avatar:'CampusNet.png', bio:''};
-    profiles['System'].avatar = 'CampusNet.png';
-    localStorage.setItem('profiles', JSON.stringify(profiles));
-    localStorage.setItem('profile:System', JSON.stringify(profiles['System']));
-  }catch(e){}
+    const resp = await SocialSupabase.fetchPosts();
+    if(resp.error) throw resp.error;
+    const profilesResp = await SocialSupabase.getAllProfiles();
+    const profiles = (profilesResp.data || []).reduce((m, p)=>{ m[p.id] = p; m[p.username] = p; return m; }, {});
+    postsArr = (resp.data || []).map(r=>({
+      id: r.id,
+      author: (profiles[r.user_id] && profiles[r.user_id].username) || (profiles[r.user_id] && profiles[r.user_id].name) || r.user_id,
+      text: r.content || '',
+      media: null,
+      likedUsers: [],
+      comments: [],
+      time: r.created_at || new Date().toISOString()
+    }));
+  }catch(e){
+    console.error('Failed to load posts from Supabase', e);
+    feed.innerHTML = '<div style="padding:20px;color:#666">Unable to load feed.</div>';
+    return;
+  }
+
+  // ensure System profile uses CampusNet.png locally (keeps avatar behavior)
+  try{ const localProfiles = JSON.parse(localStorage.getItem('profiles')||'{}'); localProfiles['System'] = localProfiles['System'] || {name:'System', avatar:'CampusNet.png', bio:''}; localProfiles['System'].avatar = 'CampusNet.png'; localStorage.setItem('profiles', JSON.stringify(localProfiles)); localStorage.setItem('profile:System', JSON.stringify(localProfiles['System'])); }catch(e){}
 
   postsArr.forEach(post=>{
     if(!Array.isArray(post.likedUsers)) post.likedUsers = [];
     const node = createPostElement(post);
-    // attach likes/comments and actions (same as prior code)
     const likesEl = node.querySelector('.likes');
     const likeBtn = node.querySelector('.like-btn');
-    const likedCount = post.likedUsers.length || post.likes || 0;
-    likesEl.textContent = likedCount;
-    if(currentUser && post.likedUsers.indexOf(currentUser) > -1){ likeBtn.classList.add('liked'); } else { likeBtn.classList.remove('liked'); }
+    likesEl.textContent = (post.likedUsers && post.likedUsers.length) || 0;
+    if(currentUser && post.likedUsers.indexOf(currentUser) > -1) likeBtn.classList.add('liked');
     const commentsEl = node.querySelector('.comments'); commentsEl.textContent = (post.comments||[]).length;
 
-    const likeButton = node.querySelector('.like-btn');
-    likeButton.addEventListener('click', ()=>{
+    // Like button: client-only behavior until server-side likes implemented
+    likeBtn.addEventListener('click', ()=>{
       if(!currentUser) return alert('Sign in to like posts');
-      // local-like only for now; server-side like handling not implemented yet
-      const posts = loadPosts(); const idx = posts.findIndex(p=>p.id===post.id);
-      if(idx>-1){
-        const uidx = posts[idx].likedUsers ? posts[idx].likedUsers.indexOf(currentUser) : -1;
-        if(uidx > -1){ posts[idx].likedUsers.splice(uidx,1); } else { posts[idx].likedUsers = posts[idx].likedUsers || []; posts[idx].likedUsers.push(currentUser); }
-        posts[idx].likes = posts[idx].likedUsers.length;
-        saveAllPosts(posts);
-        renderPosts();
-      }
+      if(!post.likedUsers) post.likedUsers = [];
+      const i = post.likedUsers.indexOf(currentUser);
+      if(i>-1) post.likedUsers.splice(i,1); else post.likedUsers.push(currentUser);
+      likesEl.textContent = post.likedUsers.length;
+      likeBtn.classList.toggle('liked');
     });
 
     const commentBtn = node.querySelector('.comment-btn');
@@ -221,19 +196,19 @@ async function renderPosts(){
     const commentInput = node.querySelector('.comment-input');
     commentBtn.addEventListener('click', ()=> commentArea.classList.toggle('hidden'));
     submitComment.addEventListener('click', ()=>{
-      const v = commentInput.value.trim(); if(!v) return; const posts = loadPosts(); const idx = posts.findIndex(p=>p.id===post.id); if(idx>-1){ posts[idx].comments = posts[idx].comments || []; posts[idx].comments.push({author:currentUser,text:v,time:new Date().toISOString()}); saveAllPosts(posts); renderPosts(); }
+      const v = commentInput.value.trim(); if(!v) return; post.comments = post.comments || []; post.comments.push({ author: currentUser, text: v, time: new Date().toISOString() }); commentsEl.textContent = post.comments.length; commentInput.value = '';
     });
 
     const footer = node.querySelector('.post-footer');
     if(footer){
-      const del = document.createElement('button'); del.className = 'action delete-btn'; del.textContent = 'Delete';
-      del.style.marginLeft = 'auto';
+      const del = document.createElement('button'); del.className = 'action delete-btn'; del.textContent = 'Delete'; del.style.marginLeft = 'auto';
       if(post.author !== currentUser) del.style.display = 'none';
-      del.addEventListener('click', ()=>{
+      del.addEventListener('click', async ()=>{
         if(!confirm('Delete this post?')) return;
-        const posts = loadPosts().filter(p=>p.id !== post.id);
-        saveAllPosts(posts);
-        renderPosts();
+        try{
+          await SocialSupabase.deletePostById(post.id);
+          await renderPosts();
+        }catch(e){ console.error('Failed to delete post', e); alert('Could not delete post'); }
       });
       footer.appendChild(del);
     }
