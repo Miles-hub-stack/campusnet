@@ -337,13 +337,12 @@ async function renderPosts() {
             time: c.created_at || new Date().toISOString(),
           }))
         : [];
-      const profile = profiles[r.user_id] || {};
-
       return {
         id: r.id,
-        author: profile.username || profile.name || "Anonymous", // <- use this
-        username: profile.username || profile.name || "Anonymous",
-        avatar_url: profile.avatar_url || "https://via.placeholder.com/48",
+        author:
+          (profiles[r.user_id] && profiles[r.user_id].username) ||
+          (profiles[r.user_id] && profiles[r.user_id].name) ||
+          r.user_id,
         text: r.content || "",
         media: null,
         likedBy: likes,
