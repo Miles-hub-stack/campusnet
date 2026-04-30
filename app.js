@@ -322,11 +322,12 @@ async function renderPosts() {
             time: c.created_at || new Date().toISOString(),
           }))
         : [];
-      const profileData = r.profiles && Array.isArray(r.profiles) ? r.profiles[0] : r.profiles;
+      // profiles map is populated from getAllProfiles() call in renderPosts
+      const profileData = profiles[r.user_id];
       return {
         id: r.id,
-        author: profileData?.username || (profiles[r.user_id]?.username) || r.user_id,
-        avatar_url: profileData?.avatar_url || (profiles[r.user_id]?.avatar_url) || null,
+        author: profileData?.username || r.user_id,
+        avatar_url: profileData?.avatar_url || null,
         text: r.content || "",
         media: null,
         likedBy: likes,

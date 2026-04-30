@@ -186,11 +186,11 @@
       return new Promise((resolve) => {
         _enqueue(async () => {
           try {
-            // fetch posts ordered by newest, including nested likes, comments, and profile data
+            // fetch posts ordered by newest with likes and comments (profiles fetched separately in app.js)
             const { data, error } = await _sb
               .from("posts")
               .select(
-                "id, content, user_id, created_at, profiles(username, avatar_url), likes(user_id), comments(id, user_id, content, created_at)",
+                "id, content, user_id, created_at, likes(user_id), comments(id, user_id, content, created_at)",
               )
               .order("created_at", { ascending: false });
             resolve({ data, error });
