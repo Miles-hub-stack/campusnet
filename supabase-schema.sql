@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   username text UNIQUE,
   name text,
-  avatar text,
+  avatar_url text,
   bio text,
   updated_at timestamptz DEFAULT now()
 );

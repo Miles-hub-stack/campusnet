@@ -102,7 +102,7 @@
                 id: data.user?.id || null,
                 username,
                 name: profile.name || username,
-                avatar: profile.avatar || null,
+                avatar_url: profile.avatar || null,
                 bio: profile.bio || null,
               };
               await _sb.from("profiles").upsert(profileRow);
@@ -186,11 +186,11 @@
       return new Promise((resolve) => {
         _enqueue(async () => {
           try {
-            // fetch posts ordered by newest, including nested likes and comments
+            // fetch posts ordered by newest, including nested likes, comments, and profile data
             const { data, error } = await _sb
               .from("posts")
               .select(
-                "id, content, user_id, created_at, likes(user_id), comments(id, user_id, content, created_at)",
+                "id, content, user_id, created_at, profiles(username, avatar_url), likes(user_id), comments(id, user_id, content, created_at)",
               )
               .order("created_at", { ascending: false });
             resolve({ data, error });

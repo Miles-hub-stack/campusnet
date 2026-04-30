@@ -245,12 +245,12 @@
           const p = profiles[u] ||
             JSON.parse(localStorage.getItem("profile:" + u) || "null") || {
               name: u,
-              avatar: "https://via.placeholder.com/48",
+              avatar_url: "https://via.placeholder.com/48",
               bio: "",
             };
           const row = document.createElement("div");
           row.className = "profile-item";
-          row.innerHTML = `<img src="${p.avatar}" class="avatar-thumb"><div style="flex:1"><div style="font-weight:600">${p.name}</div><div class=\"muted\">@${u}</div></div><div><button class=\"btn\" data-user=\"${u}\">Edit</button></div>`;
+          row.innerHTML = `<img src="${p.avatar_url}" class="avatar-thumb"><div style="flex:1"><div style="font-weight:600">${p.name}</div><div class=\"muted\">@${u}</div></div><div><button class=\"btn\" data-user=\"${u}\">Edit</button></div>`;
           list.appendChild(row);
         });
         // wire edit buttons
@@ -267,13 +267,13 @@
         ] ||
           JSON.parse(localStorage.getItem("profile:" + username) || "null") || {
             name: username,
-            avatar: "https://via.placeholder.com/96",
+            avatar_url: "https://via.placeholder.com/96",
             bio: "",
           };
         qs("editorTitle").textContent = "Editing: @" + username;
         qs("editName").value = p.name || username;
         qs("editBio").value = p.bio || "";
-        qs("editAvatar").src = p.avatar || "https://via.placeholder.com/96";
+        qs("editAvatar").src = p.avatar_url || "https://via.placeholder.com/96";
         qs("editor").style.display = "block";
         qs("editor").dataset.user = username;
       }
@@ -299,7 +299,7 @@
           if (!username) return;
           const name = qs("editName").value.trim();
           const bio = qs("editBio").value.trim();
-          const avatar =
+          const avatar_url =
             qs("editAvatar").dataset.dataUrl ||
             qs("editAvatar").src ||
             "https://via.placeholder.com/96";
@@ -314,7 +314,7 @@
                   id,
                   username,
                   name: name || username,
-                  avatar,
+                  avatar_url,
                   bio,
                 });
               } catch (e) {

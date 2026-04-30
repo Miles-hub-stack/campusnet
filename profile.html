@@ -121,7 +121,7 @@
             if (!resp.error && resp.data) {
               profile = {
                 name: resp.data.name || username,
-                avatar: resp.data.avatar || profile.avatar,
+                avatar_url: resp.data.avatar_url || profile.avatar_url,
                 bio: resp.data.bio || "",
                 id: resp.data.id,
               };
@@ -141,9 +141,9 @@
 
         displayNameEl.textContent = profile.name || username;
         userHandleEl.textContent = "@" + username;
-        avatarEl.src = profile.avatar;
+        avatarEl.src = profile.avatar_url;
         bioEl.value = profile.bio || "";
-        avatarPreview.innerHTML = `<img src="${profile.avatar}" style="max-width:120px;border-radius:8px">`;
+        avatarPreview.innerHTML = `<img src="${profile.avatar_url}" style="max-width:120px;border-radius:8px">`;
 
         avatarFile.addEventListener("change", (e) => {
           const f = e.target.files && e.target.files[0];
@@ -164,14 +164,14 @@
           .getElementById("saveProfile")
           .addEventListener("click", async () => {
             const bio = bioEl.value.trim();
-            const avatar =
+            const avatar_url =
               avatarFile && avatarFile._dataUrl
                 ? avatarFile._dataUrl
-                : profile.avatar || "https://via.placeholder.com/96";
+                : profile.avatar_url || "https://via.placeholder.com/96";
             const updated = {
               username: username,
               name: profile.name || username,
-              avatar,
+              avatar_url,
               bio,
             };
             // attempt server update
@@ -193,7 +193,7 @@
                 "profile:" + username,
                 JSON.stringify({
                   name: updated.name,
-                  avatar: updated.avatar,
+                  avatar_url: updated.avatar_url,
                   bio: updated.bio,
                 }),
               );
@@ -202,7 +202,7 @@
               );
               profiles[username] = {
                 name: updated.name,
-                avatar: updated.avatar,
+                avatar_url: updated.avatar_url,
                 bio: updated.bio,
               };
               localStorage.setItem("profiles", JSON.stringify(profiles));

@@ -115,8 +115,8 @@ updateCreateUI(false);
 function createPostElement(post) {
   const node = template.content.cloneNode(true);
   // author/profile using Supabase data directly
- node.querySelector(".name").textContent = post.author;
- node.querySelector(".avatar").src = post.avatar_url;
+  node.querySelector(".name").textContent = post.author;
+  node.querySelector(".avatar").src = post.avatar_url || "https://via.placeholder.com/48";
   // body text
   const body = node.querySelector(".post-body");
   body.textContent = post.text || "";
@@ -337,12 +337,11 @@ async function renderPosts() {
             time: c.created_at || new Date().toISOString(),
           }))
         : [];
+      const profileData = r.profiles && Array.isArray(r.profiles) ? r.profiles[0] : r.profiles;
       return {
         id: r.id,
-        author:
-          (profiles[r.user_id] && profiles[r.user_id].username) ||
-          (profiles[r.user_id] && profiles[r.user_id].name) ||
-          r.user_id,
+        author: profileData?.username || (profiles[r.user_id]?.username) || r.user_id,
+        avatar_url: profileData?.avatar_url || (profiles[r.user_id]?.avatar_url) || null,
         text: r.content || "",
         media: null,
         likedBy: likes,
@@ -373,6 +372,7 @@ async function renderPosts() {
           (profiles[r.user_id] && profiles[r.user_id].username) ||
           (profiles[r.user_id] && profiles[r.user_id].name) ||
           r.user_id,
+        avatar_url: (profiles[r.user_id] && profiles[r.user_id].avatar_url) || null,
         text: r.content || "",
         media: null,
         likedBy: [],
