@@ -22,29 +22,6 @@ CREATE TABLE IF NOT EXISTS public.posts (
   created_at timestamptz DEFAULT now()
 );
 
--- Enable Row Level Security
-ALTER TABLE public.posts ENABLE ROW LEVEL SECURITY;
-
--- Allow everyone to select posts (public read)
-CREATE POLICY "Allow select for all" ON public.posts
-  FOR SELECT
-  USING (true);
-
--- Allow inserts only for authenticated users and ensure user_id matches auth.uid()
-CREATE POLICY "Allow insert for authenticated" ON public.posts
-  FOR INSERT
-  WITH CHECK (auth.uid() IS NOT NULL AND user_id = auth.uid());
-
--- Optional: allow owners to update/delete their posts
-CREATE POLICY "Allow update by owner" ON public.posts
-  FOR UPDATE
-  USING (user_id = auth.uid())
-  WITH CHECK (user_id = auth.uid());
-
-CREATE POLICY "Allow delete by owner" ON public.posts
-  FOR DELETE
-  USING (user_id = auth.uid());
-
 -- Likes table
 CREATE TABLE IF NOT EXISTS public.likes (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -53,17 +30,6 @@ CREATE TABLE IF NOT EXISTS public.likes (
   created_at timestamptz DEFAULT now(),
   UNIQUE(post_id, user_id)
 );
-
-ALTER TABLE public.likes ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow select likes" ON public.likes
-  FOR SELECT
-  USING (true);
-CREATE POLICY "Allow insert likes" ON public.likes
-  FOR INSERT
-  WITH CHECK (auth.uid() IS NOT NULL AND user_id = auth.uid());
-CREATE POLICY "Allow delete likes by owner" ON public.likes
-  FOR DELETE
-  USING (user_id = auth.uid());
 
 -- Comments table
 CREATE TABLE IF NOT EXISTS public.comments (
@@ -74,22 +40,73 @@ CREATE TABLE IF NOT EXISTS public.comments (
   created_at timestamptz DEFAULT now()
 );
 
-ALTER TABLE public.comments ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow select comments" ON public.comments
-  FOR SELECT
-  USING (true);
-CREATE POLICY "Allow insert comments" ON public.comments
-  FOR INSERT
-  WITH CHECK (auth.uid() IS NOT NULL AND user_id = auth.uid());
-CREATE POLICY "Allow delete comments by owner" ON public.comments
-  FOR DELETE
-  USING (user_id = auth.uid());
+-- ===== ROW LEVEL SECURITY =====
 
--- Ensure profiles table can be managed by your app (you may add RLS per requirements)
+-- Enable RLS for all tables
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.posts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.likes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.comments ENABLE ROW LEVEL SECURITY;
+
+-- ===== PROFILES POLICIES =====
+DROP POLICY IF EXISTS "Allow profile upsert by owner" ON public.profiles;
 CREATE POLICY "Allow profile upsert by owner" ON public.profiles
   FOR ALL
   USING (auth.uid() IS NOT NULL AND id = auth.uid())
   WITH CHECK (auth.uid() IS NOT NULL AND id = auth.uid());
+
+-- ===== POSTS POLICIES =====
+DROP POLICY IF EXISTS "Allow select for all" ON public.posts;
+CREATE POLICY "Allow select for all" ON public.posts
+  FOR SELECT
+  USING (true);
+
+DROP POLICY IF EXISTS "Allow insert for authenticated" ON public.posts;
+CREATE POLICY "Allow insert for authenticated" ON public.posts
+  FOR INSERT
+  WITH CHECK (auth.uid() IS NOT NULL AND user_id = auth.uid());
+
+DROP POLICY IF EXISTS "Allow update by owner" ON public.posts;
+CREATE POLICY "Allow update by owner" ON public.posts
+  FOR UPDATE
+  USING (user_id = auth.uid())
+  WITH CHECK (user_id = auth.uid());
+
+DROP POLICY IF EXISTS "Allow delete by owner" ON public.posts;
+CREATE POLICY "Allow delete by owner" ON public.posts
+  FOR DELETE
+  USING (user_id = auth.uid());
+
+-- ===== LIKES POLICIES =====
+DROP POLICY IF EXISTS "Allow select likes" ON public.likes;
+CREATE POLICY "Allow select likes" ON public.likes
+  FOR SELECT
+  USING (true);
+
+DROP POLICY IF EXISTS "Allow insert likes" ON public.likes;
+CREATE POLICY "Allow insert likes" ON public.likes
+  FOR INSERT
+  WITH CHECK (auth.uid() IS NOT NULL AND user_id = auth.uid());
+
+DROP POLICY IF EXISTS "Allow delete likes by owner" ON public.likes;
+CREATE POLICY "Allow delete likes by owner" ON public.likes
+  FOR DELETE
+  USING (user_id = auth.uid());
+
+-- ===== COMMENTS POLICIES =====
+DROP POLICY IF EXISTS "Allow select comments" ON public.comments;
+CREATE POLICY "Allow select comments" ON public.comments
+  FOR SELECT
+  USING (true);
+
+DROP POLICY IF EXISTS "Allow insert comments" ON public.comments;
+CREATE POLICY "Allow insert comments" ON public.comments
+  FOR INSERT
+  WITH CHECK (auth.uid() IS NOT NULL AND user_id = auth.uid());
+
+DROP POLICY IF EXISTS "Allow delete comments by owner" ON public.comments;
+CREATE POLICY "Allow delete comments by owner" ON public.comments
+  FOR DELETE
+  USING (user_id = auth.uid());
 
 -- End of schema

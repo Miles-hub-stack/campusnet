@@ -51,4 +51,10 @@ Meta tags for older browsers (add to `<head>` of your HTML):
 SQL schema
 
 - A ready-to-run SQL file is included in this project: `supabase-schema.sql`.
-- Run it in your Supabase project's SQL editor to create the `profiles` and `posts` tables and add recommended RLS policies.
+- Run it in your Supabase project's SQL editor to create the `profiles`, `posts`, `likes`, and `comments` tables and add recommended RLS policies.
+
+Deployment
+
+- Commit and push your changes to GitHub.
+- If your repository is connected to Vercel, the site will auto-deploy after the push.
+- Open the Vercel deployment URL in your browser to confirm the updated version.

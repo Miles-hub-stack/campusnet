@@ -34,14 +34,6 @@ let currentUser = getCurrentUser();
 if (currentUser && profileLink) {
   profileLink.href = "profile.html";
 }
-// Show admin link only for System user
-try {
-  const adminLink = document.getElementById("adminLink");
-  if (adminLink) {
-    if (currentUser === "System") adminLink.style.display = "";
-    else adminLink.style.display = "none";
-  }
-} catch (e) {}
 
 // If Supabase is available, try to get the authenticated user and sync username
 (async function syncSupabaseUser() {
@@ -62,13 +54,6 @@ try {
           } catch (e) {}
         }
         if (profileLink) profileLink.href = "profile.html";
-        // show admin link if System
-        try {
-          const adminLink = document.getElementById("adminLink");
-          if (adminLink) {
-            adminLink.style.display = uname === "System" ? "" : "none";
-          }
-        } catch (e) {}
       }
     } catch (e) {
       /* ignore */
