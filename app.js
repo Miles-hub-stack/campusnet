@@ -303,6 +303,7 @@ async function renderPosts() {
       m[p.username] = p;
       return m;
     }, {});
+    console.log("Fetched profiles:", profiles);
     try {
       const uresp = await SocialSupabase.getUser();
       supUserId = uresp.data?.user?.id || null;
