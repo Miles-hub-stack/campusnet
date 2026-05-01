@@ -50,8 +50,20 @@ ALTER TABLE public.comments ENABLE ROW LEVEL SECURITY;
 
 -- ===== PROFILES POLICIES =====
 DROP POLICY IF EXISTS "Allow profile upsert by owner" ON public.profiles;
-CREATE POLICY "Allow profile upsert by owner" ON public.profiles
-  FOR ALL
+DROP POLICY IF EXISTS "Allow select profiles" ON public.profiles;
+DROP POLICY IF EXISTS "Allow insert own profile" ON public.profiles;
+DROP POLICY IF EXISTS "Allow update own profile" ON public.profiles;
+
+CREATE POLICY "Allow select profiles" ON public.profiles
+  FOR SELECT
+  USING (true);
+
+CREATE POLICY "Allow insert own profile" ON public.profiles
+  FOR INSERT
+  WITH CHECK (auth.uid() IS NOT NULL AND id = auth.uid());
+
+CREATE POLICY "Allow update own profile" ON public.profiles
+  FOR UPDATE
   USING (auth.uid() IS NOT NULL AND id = auth.uid())
   WITH CHECK (auth.uid() IS NOT NULL AND id = auth.uid());
 
