@@ -297,7 +297,9 @@ async function renderPosts() {
   try {
     const resp = await SocialSupabase.fetchPosts();
     if (resp.error) throw resp.error;
+    console.log("Fetched posts:", resp.data);
     const profilesResp = await SocialSupabase.getAllProfiles();
+    console.log("Profiles response:", profilesResp);
     const profiles = (profilesResp.data || []).reduce((m, p) => {
       m[p.id] = p;
       m[p.username] = p;
