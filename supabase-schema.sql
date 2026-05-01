@@ -60,7 +60,7 @@ CREATE POLICY "Allow select profiles" ON public.profiles
 
 CREATE POLICY "Allow insert own profile" ON public.profiles
   FOR INSERT
-  WITH CHECK (auth.uid() IS NOT NULL AND id = auth.uid());
+  WITH CHECK (true);
 
 CREATE POLICY "Allow update own profile" ON public.profiles
   FOR UPDATE
