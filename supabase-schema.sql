@@ -4,6 +4,9 @@
 -- Enable pgcrypto for gen_random_uuid() if not already enabled
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
+-- Add media column to posts if it doesn't exist
+ALTER TABLE public.posts ADD COLUMN IF NOT EXISTS media text;
+
 -- Profiles table
 CREATE TABLE IF NOT EXISTS public.profiles (
   id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
