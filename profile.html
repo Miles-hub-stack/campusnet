@@ -119,17 +119,10 @@
           try {
             const u = await SocialSupabase.getUser();
             const userId = u.data?.user?.id;
-            console.log("Current user ID:", userId);
             
             if (userId) {
               // Fetch profile by user ID (more reliable than username)
               const resp = await SocialSupabase.getProfileById(userId);
-              console.log("Fetched profile from Supabase by ID:", resp);
-              if (resp.data) {
-                console.log("Profile data exists. avatar_url:", resp.data.avatar_url);
-              } else {
-                console.log("No profile data returned. Error:", resp.error);
-              }
               if (!resp.error && resp.data) {
                 profile = {
                   name: resp.data.name || username,
@@ -154,7 +147,6 @@
 
         displayNameEl.textContent = profile.name || username;
         userHandleEl.textContent = "@" + username;
-        console.log("Setting avatar src to:", profile.avatar_url);
         avatarEl.src = profile.avatar_url || "https://via.placeholder.com/96";
         bioEl.value = profile.bio || "";
         avatarPreview.innerHTML = profile.avatar_url ? `<img src="${profile.avatar_url}" style="max-width:120px;border-radius:8px">` : "";
