@@ -160,7 +160,7 @@
       });
     },
 
-    async addPost({ content }) {
+    async addPost({ content, media = null }) {
       return new Promise((resolve) => {
         _enqueue(async () => {
           try {
@@ -171,6 +171,7 @@
             const payload = {
               content,
               user_id,
+              media,
               created_at: new Date().toISOString(),
             };
             const { data, error } = await _sb.from("posts").insert([payload]);
@@ -190,7 +191,7 @@
             const { data, error } = await _sb
               .from("posts")
               .select(
-                "id, content, user_id, created_at, likes(user_id), comments(id, user_id, content, created_at)",
+                "id, content, user_id, media, created_at, likes(user_id), comments(id, user_id, content, created_at)",
               )
               .order("created_at", { ascending: false });
             resolve({ data, error });
@@ -208,7 +209,7 @@
           try {
             const { data, error } = await _sb
               .from("posts")
-              .select("id, content, user_id, created_at")
+              .select("id, content, user_id, media, created_at")
               .order("created_at", { ascending: false });
             resolve({ data, error });
           } catch (e) {

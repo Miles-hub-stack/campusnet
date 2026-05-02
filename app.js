@@ -206,7 +206,7 @@ postBtn.addEventListener("click", async () => {
         alert("Please sign in to create a post.");
         return;
       }
-      const res = await SocialSupabase.addPost({ content: post.text });
+      const res = await SocialSupabase.addPost({ content: post.text, media: media });
       if (res.error) {
         console.error("Add post error", res.error);
         const msg =
@@ -329,7 +329,7 @@ async function renderPosts() {
         author: profileData?.username || r.user_id,
         avatar_url: profileData?.avatar_url || null,
         text: r.content || "",
-        media: null,
+        media: r.media || null,
         likedBy: likes,
         likesCount: likes.length,
         comments: comments,
@@ -360,7 +360,7 @@ async function renderPosts() {
           r.user_id,
         avatar_url: (profiles[r.user_id] && profiles[r.user_id].avatar_url) || null,
         text: r.content || "",
-        media: null,
+        media: r.media || null,
         likedBy: [],
         likesCount: 0,
         comments: [],

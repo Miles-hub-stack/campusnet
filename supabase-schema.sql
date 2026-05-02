@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS public.posts (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   content text NOT NULL,
   user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  media text,
   created_at timestamptz DEFAULT now()
 );
 
