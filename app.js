@@ -298,14 +298,11 @@ async function renderPosts() {
     const resp = await SocialSupabase.fetchPosts();
     if (resp.error) throw resp.error;
     const profilesResp = await SocialSupabase.getAllProfiles();
-    console.log("Raw profiles from DB:", profilesResp.data);
     const profiles = (profilesResp.data || []).reduce((m, p) => {
-      console.log("Processing profile:", p.username, "avatar_url:", p.avatar_url);
       m[p.id] = p;
       m[p.username] = p;
       return m;
     }, {});
-    console.log("Profiles map:", profiles);
     try {
       const uresp = await SocialSupabase.getUser();
       supUserId = uresp.data?.user?.id || null;

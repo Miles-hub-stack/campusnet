@@ -112,7 +112,7 @@
         // Load profile: prefer server profile when possible
         let profile = {
           name: username,
-          avatar: "https://via.placeholder.com/96",
+          avatar_url: "https://via.placeholder.com/96",
           bio: "",
         };
         if (window.SocialSupabase && username) {
@@ -141,9 +141,9 @@
 
         displayNameEl.textContent = profile.name || username;
         userHandleEl.textContent = "@" + username;
-        avatarEl.src = profile.avatar_url;
+        avatarEl.src = profile.avatar_url || "https://via.placeholder.com/96";
         bioEl.value = profile.bio || "";
-        avatarPreview.innerHTML = `<img src="${profile.avatar_url}" style="max-width:120px;border-radius:8px">`;
+        avatarPreview.innerHTML = profile.avatar_url ? `<img src="${profile.avatar_url}" style="max-width:120px;border-radius:8px">` : "";
 
         avatarFile.addEventListener("change", (e) => {
           const f = e.target.files && e.target.files[0];
