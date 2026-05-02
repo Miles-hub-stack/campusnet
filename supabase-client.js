@@ -310,6 +310,24 @@
       });
     },
 
+    async getProfileById(userId) {
+      return new Promise((resolve) => {
+        _enqueue(async () => {
+          try {
+            const { data, error } = await _sb
+              .from("profiles")
+              .select("*")
+              .eq("id", userId)
+              .limit(1)
+              .single();
+            resolve({ data, error });
+          } catch (e) {
+            resolve({ error: e });
+          }
+        });
+      });
+    },
+
     async getAllProfiles() {
       return new Promise((resolve) => {
         _enqueue(async () => {
