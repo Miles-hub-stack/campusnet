@@ -54,6 +54,9 @@
             placeholder="Choose a password"
           />
         </div>
+        <div class="field">
+          <a href="#" id="forgotLink" style="color: #2b6cb0; text-decoration: none">Forgot password?</a>
+        </div>
         <div
           id="loginMsg"
           style="color: #c0262e; margin-top: 8px; font-size: 0.95rem"
@@ -129,6 +132,34 @@
           console.error(e);
         }
       });
+
+      // Forgot password handler — uses Supabase auth to send reset email
+      const forgotLink = document.getElementById("forgotLink");
+      if (forgotLink) {
+        forgotLink.addEventListener("click", async (ev) => {
+          ev.preventDefault();
+          const email = emailEl.value.trim();
+          if (!email) {
+            loginMsg.textContent = "Enter your email to receive a reset link";
+            emailEl.focus();
+            return;
+          }
+          try {
+            const client = SocialSupabase.getClient();
+            const { data, error } = await client.auth.resetPasswordForEmail(email, {
+              redirectTo: window.location.origin + "/login.html",
+            });
+            if (error) {
+              loginMsg.textContent = error.message || String(error);
+            } else {
+              loginMsg.textContent = "Password reset email sent. Check your inbox.";
+            }
+          } catch (err) {
+            console.error(err);
+            loginMsg.textContent = "Unable to send reset email";
+          }
+        });
+      }
 
       [emailEl, passwordEl].forEach((el) =>
         el.addEventListener("keydown", (e) => {
