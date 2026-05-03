@@ -59,7 +59,7 @@
         </div>
         <div
           id="loginMsg"
-          style="color: #c0262e; margin-top: 8px; font-size: 0.95rem"
+          style="margin-top: 8px; font-size: 0.95rem"
         ></div>
         <button id="loginBtn" class="btn">Login</button>
         <div
@@ -98,6 +98,44 @@
             }
           }
         } catch (e) {}
+      })();
+
+      // Handle email confirmation redirect
+      (function handleConfirmation() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const confirmed = urlParams.get('confirmed');
+        const error = urlParams.get('error');
+        const errorDescription = urlParams.get('error_description');
+        const accessToken = urlParams.get('access_token');
+
+        const loginMsg = document.getElementById("loginMsg");
+
+        if (confirmed === 'true') {
+          // Email confirmed successfully - show success message
+          loginMsg.style.color = '#059669'; // green
+          loginMsg.textContent = "Your email has been successfully verified. Please log in.";
+          // Clear URL params
+          window.history.replaceState({}, document.title, window.location.pathname);
+        } else if (error) {
+          // Handle verification errors
+          loginMsg.style.color = '#c0262e'; // red
+          let errorMsg = "Email verification failed.";
+          if (errorDescription) {
+            errorMsg += " " + decodeURIComponent(errorDescription);
+          } else if (error === 'access_denied') {
+            errorMsg = "Email verification link is invalid or expired.";
+          }
+          loginMsg.textContent = errorMsg;
+          // Clear URL params
+          window.history.replaceState({}, document.title, window.location.pathname);
+        } else if (accessToken) {
+          // If there's an access token, it means verification succeeded but we don't auto-login
+          // Just show success message
+          loginMsg.style.color = '#059669'; // green
+          loginMsg.textContent = "Your email has been successfully verified. Please log in.";
+          // Clear URL params
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
       })();
 
       const loginBtn = document.getElementById("loginBtn");
