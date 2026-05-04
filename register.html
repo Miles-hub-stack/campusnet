@@ -105,11 +105,6 @@
           if (!username) return alert("Choose a username");
           if (!email || !password) return alert("Enter email and password");
           try {
-            // simple local-username check to avoid duplicates in demo profiles map
-            const profiles = JSON.parse(
-              localStorage.getItem("profiles") || "{}",
-            );
-            if (profiles[username]) return alert("Username taken");
             const avatarData =
               avatarFile && avatarFile._dataUrl
                 ? avatarFile._dataUrl
@@ -130,22 +125,7 @@
               );
             }
 
-            // keep local demo compatibility: save profiles map and users list locally too
-            try {
-              localStorage.setItem(
-                "profile:" + username,
-                JSON.stringify(profile),
-              );
-              profiles[username] = profile;
-              localStorage.setItem("profiles", JSON.stringify(profiles));
-              const users = JSON.parse(localStorage.getItem("users") || "[]");
-              if (!users.includes(username)) {
-                users.push(username);
-                localStorage.setItem("users", JSON.stringify(users));
-              }
-            } catch (e) {
-              console.warn("local profile save failed", e);
-            }
+            // Profile data saved to Supabase in register() function
 
             // Do not auto-login: show message instructing user to check their email for confirmation
             const msgDiv = document.getElementById("registerMsg");

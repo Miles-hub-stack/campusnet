@@ -85,9 +85,8 @@
     <script src="supabase-client.js"></script>
     <script>
       (async function () {
-        const localUser = localStorage.getItem("user");
-        // if no session locally, try supabase
-        let username = localUser;
+        // Get user from Supabase
+        let username = null;
         let supUser = null;
         if (window.SocialSupabase) {
           try {
@@ -97,7 +96,7 @@
           if (supUser) {
             username =
               supUser.user_metadata?.username ||
-              (supUser.email ? supUser.email.split("@")[0] : username);
+              (supUser.email ? supUser.email.split("@")[0] : null);
           }
         }
         if (!username) return (window.location.href = "login.html");
@@ -136,14 +135,6 @@
             console.warn("Profile fetch failed", e);
           }
         }
-        // fallback to localStorage if server profile not available
-        try {
-          const p = localStorage.getItem("profile:" + username);
-          if (p) {
-            const lp = JSON.parse(p);
-            profile = Object.assign(profile, lp);
-          }
-        } catch (e) {}
 
         displayNameEl.textContent = profile.name || username;
         userHandleEl.textContent = "@" + username;

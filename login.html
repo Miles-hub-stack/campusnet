@@ -88,7 +88,7 @@
       const hasError = urlParams.has('error');
       const isEmailConfirmation = hasAccessToken || hasError;
 
-      // If already logged in locally or via Supabase, go to index
+      // If already logged in via Supabase, go to index
       // BUT: Skip this if we're handling email confirmation
       (async function () {
         try {
@@ -97,11 +97,7 @@
             return;
           }
 
-          if (localStorage.getItem("user")) {
-            window.location.href = "index.html";
-            return;
-          }
-          // check supabase session
+          // Check Supabase session
           if (window.SocialSupabase) {
             const { data } = await SocialSupabase.getUser();
             const user = data?.user;
@@ -128,9 +124,6 @@
         if (accessToken) {
           (async () => {
             try {
-              // Clear local user session
-              localStorage.removeItem("user");
-              
               // Sign out to clear the auto-created session from email confirmation
               if (window.SocialSupabase) {
                 await SocialSupabase.logout();
@@ -183,13 +176,7 @@
             loginMsg.textContent = resp.error.message || String(resp.error);
             return;
           }
-          // fetch user info and set local session (for compatibility with demo UI)
-          const u = await SocialSupabase.getUser();
-          const supUser = u.data?.user;
-          const username =
-            supUser?.user_metadata?.username ||
-            (supUser?.email ? supUser.email.split("@")[0] : null);
-          if (username) localStorage.setItem("user", username);
+          // Authenticated - go to feed
           window.location.href = "index.html";
         } catch (e) {
           loginMsg.textContent = "Login failed";

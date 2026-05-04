@@ -10,25 +10,16 @@ const logoutBtn = document.getElementById("logoutBtn");
 const profileLink = document.getElementById("profileLink");
 
 function getCurrentUser() {
-  try {
-    return localStorage.getItem("user");
-  } catch (e) {
-    return null;
-  }
+  // User is fetched from Supabase auth, not localStorage
+  return null;
 }
 function getProfile(username) {
-  try {
-    const u = localStorage.getItem("profile:" + username);
-    return u
-      ? JSON.parse(u)
-      : { name: username, avatar: "https://via.placeholder.com/48", bio: "" };
-  } catch (e) {
-    return {
-      name: username,
-      avatar: "https://via.placeholder.com/48",
-      bio: "",
-    };
-  }
+  // Profile data is fetched from Supabase, not localStorage
+  return {
+    name: username,
+    avatar_url: "https://via.placeholder.com/96",
+    bio: "",
+  };
 }
 let currentUser = getCurrentUser();
 if (currentUser && profileLink) {
@@ -49,9 +40,6 @@ if (currentUser && profileLink) {
           (sup.email ? sup.email.split("@")[0] : null);
         if (uname) {
           currentUser = uname;
-          try {
-            localStorage.setItem("user", uname);
-          } catch (e) {}
         }
         if (profileLink) profileLink.href = "profile.html";
       }
@@ -376,21 +364,7 @@ async function renderPosts() {
     }
   }
 
-  // ensure System profile uses CampusNet.png locally (keeps avatar behavior)
-  try {
-    const localProfiles = JSON.parse(localStorage.getItem("profiles") || "{}");
-    localProfiles["System"] = localProfiles["System"] || {
-      name: "System",
-      avatar: "CampusNet.png",
-      bio: "",
-    };
-    localProfiles["System"].avatar = "CampusNet.png";
-    localStorage.setItem("profiles", JSON.stringify(localProfiles));
-    localStorage.setItem(
-      "profile:System",
-      JSON.stringify(localProfiles["System"]),
-    );
-  } catch (e) {}
+  // All profile data is fetched from Supabase
 
   postsArr.forEach((post) => {
     const node = createPostElement(post);
