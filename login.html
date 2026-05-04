@@ -103,36 +103,34 @@
       // Handle email confirmation redirect
       (function handleConfirmation() {
         const urlParams = new URLSearchParams(window.location.search);
-        const confirmed = urlParams.get('confirmed');
+        const accessToken = urlParams.get('access_token');
         const error = urlParams.get('error');
         const errorDescription = urlParams.get('error_description');
-        const accessToken = urlParams.get('access_token');
+        const type = urlParams.get('type'); // 'signup' or 'recovery'
 
         const loginMsg = document.getElementById("loginMsg");
 
-        if (confirmed === 'true') {
-          // Email confirmed successfully - show success message
+        // If there's an access_token, verification succeeded - show success but don't auto-login
+        if (accessToken) {
           loginMsg.style.color = '#059669'; // green
           loginMsg.textContent = "Your email has been successfully verified. Please log in.";
-          // Clear URL params
+          // Clear URL params to prevent confusion
           window.history.replaceState({}, document.title, window.location.pathname);
-        } else if (error) {
-          // Handle verification errors
+        } 
+        // If there's an error, show error message
+        else if (error) {
           loginMsg.style.color = '#c0262e'; // red
-          let errorMsg = "Email verification failed.";
-          if (errorDescription) {
-            errorMsg += " " + decodeURIComponent(errorDescription);
-          } else if (error === 'access_denied') {
-            errorMsg = "Email verification link is invalid or expired.";
+          let errorMsg = "Verification failed.";
+          
+          if (error === 'access_denied') {
+            errorMsg = "Email verification link is invalid or expired. Please register again.";
+          } else if (errorDescription) {
+            errorMsg = decodeURIComponent(errorDescription);
+          } else {
+            errorMsg = error;
           }
+          
           loginMsg.textContent = errorMsg;
-          // Clear URL params
-          window.history.replaceState({}, document.title, window.location.pathname);
-        } else if (accessToken) {
-          // If there's an access token, it means verification succeeded but we don't auto-login
-          // Just show success message
-          loginMsg.style.color = '#059669'; // green
-          loginMsg.textContent = "Your email has been successfully verified. Please log in.";
           // Clear URL params
           window.history.replaceState({}, document.title, window.location.pathname);
         }
