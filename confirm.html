@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Confirming Email - MySocial</title>
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+      .center {
+        max-width: 420px;
+        margin: 80px auto;
+        padding: 18px;
+      }
+      .card {
+        background: #fff;
+        padding: 18px;
+        border-radius: 12px;
+        border: 1px solid #eef2f7;
+      }
+      .spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid #e5e7eb;
+        border-top: 3px solid #2b6cb0;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="center">
+      <div class="card">
+        <div style="text-align: center">
+          <div class="spinner"></div>
+          <p id="msg" style="margin-top: 16px; color: #666">Verifying your email...</p>
+        </div>
+      </div>
+    </div>
+
+    <script src="supabase-client.js"></script>
+    <script>
+      (async function () {
+        const params = new URLSearchParams(window.location.search);
+        const token = params.get('token');
+        const type = params.get('type'); // 'signup' or 'recovery'
+        const msgEl = document.getElementById('msg');
+
+        if (!token) {
+          msgEl.textContent = 'Invalid verification link. Redirecting to login...';
+          setTimeout(() => {
+            window.location.href = 'login.html';
+          }, 2000);
+          return;
+        }
+
+        try {
+          // Verify the token with Supabase without creating a session
+          if (!window.SocialSupabase) {
+            throw new Error('Supabase not loaded');
+          }
+
+          const client = SocialSupabase.getClient();
+          
+          // Use verifyOtp to confirm the email WITHOUT creating a session
+          const { data, error } = await client.auth.verifyOtp({
+            token_hash: token,
+            type: type || 'signup',
+          });
+
+          if (error) {
+            console.error('Verification error:', error);
+            msgEl.textContent = 'Email verification failed. The link may be expired.';
+            msgEl.style.color = '#c0262e';
+            setTimeout(() => {
+              window.location.href = 'login.html?verified=false';
+            }, 3000);
+            return;
+          }
+
+          // Success! Now sign out to prevent auto-login
+          try {
+            await client.auth.signOut();
+          } catch (e) {
+            console.warn('Signout after verification failed:', e);
+          }
+
+          msgEl.textContent = 'Email verified successfully! Redirecting to login...';
+          msgEl.style.color = '#059669';
+
+          // Redirect to login with success flag
+          setTimeout(() => {
+            window.location.href = 'login.html?verified=true';
+          }, 2000);
+        } catch (err) {
+          console.error('Error:', err);
+          msgEl.textContent = 'An error occurred. Please try again.';
+          msgEl.style.color = '#c0262e';
+          setTimeout(() => {
+            window.location.href = 'login.html';
+          }, 3000);
+        }
+      })();
+    </script>
+  </body>
+</html>

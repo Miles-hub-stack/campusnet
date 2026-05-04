@@ -91,7 +91,7 @@
             const { data, error } = await _sb.auth.signUp(
               { email, password },
               {
-                redirectTo: "https://tiny-chaja-0c32c9.netlify.app/login.html",
+                redirectTo: window.location.origin + "/confirm.html",
                 data: { username },
               },
             );

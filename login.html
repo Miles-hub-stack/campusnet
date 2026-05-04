@@ -82,18 +82,19 @@
 
     <script src="supabase-client.js"></script>
     <script>
-      // Check for email confirmation parameters first
+      // Check for email confirmation or verification parameters
       const urlParams = new URLSearchParams(window.location.search);
       const hasAccessToken = urlParams.has('access_token');
       const hasError = urlParams.has('error');
+      const verified = urlParams.get('verified');
       const isEmailConfirmation = hasAccessToken || hasError;
 
       // If already logged in via Supabase, go to index
       // BUT: Skip this if we're handling email confirmation
       (async function () {
         try {
-          // Don't redirect if handling email confirmation
-          if (isEmailConfirmation) {
+          // Don't redirect if handling email confirmation or verification redirect
+          if (isEmailConfirmation || verified) {
             return;
           }
 
@@ -110,49 +111,22 @@
 
       // Handle email confirmation redirect
       (function handleConfirmation() {
-        if (!isEmailConfirmation) {
+        if (!verified) {
           return;
         }
 
-        const accessToken = urlParams.get('access_token');
-        const error = urlParams.get('error');
-        const errorDescription = urlParams.get('error_description');
-
         const loginMsg = document.getElementById("loginMsg");
 
-        // If there's an access_token, verification succeeded - sign out and show message
-        if (accessToken) {
-          (async () => {
-            try {
-              // Sign out to clear the auto-created session from email confirmation
-              if (window.SocialSupabase) {
-                await SocialSupabase.logout();
-              }
-            } catch (e) {
-              console.warn("Logout failed:", e);
-            }
-            
-            loginMsg.style.color = '#059669'; // green
-            loginMsg.textContent = "Your email has been successfully verified. Please log in.";
-            // Clear URL params to prevent confusion
-            window.history.replaceState({}, document.title, window.location.pathname);
-          })();
+        // Handle redirect from confirm.html with verified=true
+        if (verified === 'true') {
+          loginMsg.style.color = '#059669'; // green
+          loginMsg.textContent = "Your email has been successfully verified. Please log in.";
+          window.history.replaceState({}, document.title, window.location.pathname);
         } 
-        // If there's an error, show error message
-        else if (error) {
+        // Handle verification errors
+        else if (verified === 'false') {
           loginMsg.style.color = '#c0262e'; // red
-          let errorMsg = "Verification failed.";
-          
-          if (error === 'access_denied') {
-            errorMsg = "Email verification link is invalid or expired. Please register again.";
-          } else if (errorDescription) {
-            errorMsg = decodeURIComponent(errorDescription);
-          } else {
-            errorMsg = error;
-          }
-          
-          loginMsg.textContent = errorMsg;
-          // Clear URL params
+          loginMsg.textContent = "Email verification failed. The link may be expired. Please try registering again.";
           window.history.replaceState({}, document.title, window.location.pathname);
         }
       })();
