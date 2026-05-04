@@ -82,9 +82,21 @@
 
     <script src="supabase-client.js"></script>
     <script>
+      // Check for email confirmation parameters first
+      const urlParams = new URLSearchParams(window.location.search);
+      const hasAccessToken = urlParams.has('access_token');
+      const hasError = urlParams.has('error');
+      const isEmailConfirmation = hasAccessToken || hasError;
+
       // If already logged in locally or via Supabase, go to index
+      // BUT: Skip this if we're handling email confirmation
       (async function () {
         try {
+          // Don't redirect if handling email confirmation
+          if (isEmailConfirmation) {
+            return;
+          }
+
           if (localStorage.getItem("user")) {
             window.location.href = "index.html";
             return;
@@ -102,7 +114,10 @@
 
       // Handle email confirmation redirect
       (function handleConfirmation() {
-        const urlParams = new URLSearchParams(window.location.search);
+        if (!isEmailConfirmation) {
+          return;
+        }
+
         const accessToken = urlParams.get('access_token');
         const error = urlParams.get('error');
         const errorDescription = urlParams.get('error_description');
@@ -113,6 +128,9 @@
         if (accessToken) {
           (async () => {
             try {
+              // Clear local user session
+              localStorage.removeItem("user");
+              
               // Sign out to clear the auto-created session from email confirmation
               if (window.SocialSupabase) {
                 await SocialSupabase.logout();
