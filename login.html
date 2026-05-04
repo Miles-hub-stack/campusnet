@@ -106,16 +106,26 @@
         const accessToken = urlParams.get('access_token');
         const error = urlParams.get('error');
         const errorDescription = urlParams.get('error_description');
-        const type = urlParams.get('type'); // 'signup' or 'recovery'
 
         const loginMsg = document.getElementById("loginMsg");
 
-        // If there's an access_token, verification succeeded - show success but don't auto-login
+        // If there's an access_token, verification succeeded - sign out and show message
         if (accessToken) {
-          loginMsg.style.color = '#059669'; // green
-          loginMsg.textContent = "Your email has been successfully verified. Please log in.";
-          // Clear URL params to prevent confusion
-          window.history.replaceState({}, document.title, window.location.pathname);
+          (async () => {
+            try {
+              // Sign out to clear the auto-created session from email confirmation
+              if (window.SocialSupabase) {
+                await SocialSupabase.logout();
+              }
+            } catch (e) {
+              console.warn("Logout failed:", e);
+            }
+            
+            loginMsg.style.color = '#059669'; // green
+            loginMsg.textContent = "Your email has been successfully verified. Please log in.";
+            // Clear URL params to prevent confusion
+            window.history.replaceState({}, document.title, window.location.pathname);
+          })();
         } 
         // If there's an error, show error message
         else if (error) {
