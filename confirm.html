@@ -46,6 +46,11 @@
     <script>
       (async function () {
         const msgEl = document.getElementById('msg');
+        
+        console.log('🔍 DEBUG: Confirm.html loaded');
+        console.log('URL:', window.location.href);
+        console.log('URL Hash:', window.location.hash);
+        console.log('URL Search:', window.location.search);
 
         try {
           // Wait for Supabase to load
@@ -55,26 +60,42 @@
 
           const client = SocialSupabase.getClient();
           
+          console.log('🔍 DEBUG: Checking for session...');
+          
           // Check if Supabase automatically created a session from the email link
-          const { data: sessionData } = await client.auth.getSession();
+          const { data: sessionData, error: sessionError } = await client.auth.getSession();
+          
+          console.log('Session data:', sessionData);
+          console.log('Session error:', sessionError);
+          console.log('Has session:', !!sessionData?.session);
           
           if (sessionData?.session) {
+            console.log('✅ Session detected - signing out...');
+            
             // Session was created - this means email verification succeeded
             // Now sign out to prevent auto-login
             msgEl.textContent = 'Email verified successfully! Signing out...';
             msgEl.style.color = '#059669';
             
             try {
-              await client.auth.signOut();
-            } catch (e) {
-              console.warn('Signout after verification failed:', e);
+              const signOutResult = await client.auth.signOut();
+              console.log('✅ Sign out result:', signOutResult);
+            } catch (signOutError) {
+              console.warn('⚠️ Signout failed:', signOutError);
             }
 
+            // Check session again after signout
+            const { data: sessionAfter } = await client.auth.getSession();
+            console.log('🔍 Session after logout:', sessionAfter?.session ? 'STILL EXISTS' : 'CLEARED');
+
             // Redirect to login with success flag
+            console.log('📍 Redirecting to login.html?verified=true');
             setTimeout(() => {
               window.location.href = 'login.html?verified=true';
             }, 1500);
           } else {
+            console.log('❌ No session created - verification might have failed');
+            
             // No session created - verification might have failed
             msgEl.textContent = 'Email verification failed. The link may be expired.';
             msgEl.style.color = '#c0262e';
@@ -84,7 +105,7 @@
             }, 3000);
           }
         } catch (err) {
-          console.error('Error:', err);
+          console.error('❌ Error:', err);
           msgEl.textContent = 'An error occurred. Please try again.';
           msgEl.style.color = '#c0262e';
           setTimeout(() => {

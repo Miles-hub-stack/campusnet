@@ -89,12 +89,18 @@
       const verified = urlParams.get('verified');
       const isEmailConfirmation = hasAccessToken || hasError;
 
+      console.log('🔍 DEBUG login.html:');
+      console.log('URL:', window.location.href);
+      console.log('verified param:', verified);
+      console.log('isEmailConfirmation:', isEmailConfirmation);
+
       // If already logged in via Supabase, go to index
       // BUT: Skip this if we're handling email confirmation
       (async function () {
         try {
           // Don't redirect if handling email confirmation or verification redirect
           if (isEmailConfirmation || verified) {
+            console.log('✅ Skipping auto-redirect (handling email verification)');
             return;
           }
 
@@ -102,11 +108,15 @@
           if (window.SocialSupabase) {
             const { data } = await SocialSupabase.getUser();
             const user = data?.user;
+            console.log('🔍 Current user:', user?.email);
             if (user) {
+              console.log('⚠️ User already logged in, redirecting to index.html');
               window.location.href = "index.html";
             }
           }
-        } catch (e) {}
+        } catch (e) {
+          console.error('❌ Error checking session:', e);
+        }
       })();
 
       // Handle email confirmation redirect
