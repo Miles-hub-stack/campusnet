@@ -45,57 +45,44 @@
     <script src="supabase-client.js"></script>
     <script>
       (async function () {
-        const params = new URLSearchParams(window.location.search);
-        const token = params.get('token');
-        const type = params.get('type'); // 'signup' or 'recovery'
         const msgEl = document.getElementById('msg');
 
-        if (!token) {
-          msgEl.textContent = 'Invalid verification link. Redirecting to login...';
-          setTimeout(() => {
-            window.location.href = 'login.html';
-          }, 2000);
-          return;
-        }
-
         try {
-          // Verify the token with Supabase without creating a session
+          // Wait for Supabase to load
           if (!window.SocialSupabase) {
             throw new Error('Supabase not loaded');
           }
 
           const client = SocialSupabase.getClient();
           
-          // Use verifyOtp to confirm the email WITHOUT creating a session
-          const { data, error } = await client.auth.verifyOtp({
-            token_hash: token,
-            type: type || 'signup',
-          });
+          // Check if Supabase automatically created a session from the email link
+          const { data: sessionData } = await client.auth.getSession();
+          
+          if (sessionData?.session) {
+            // Session was created - this means email verification succeeded
+            // Now sign out to prevent auto-login
+            msgEl.textContent = 'Email verified successfully! Signing out...';
+            msgEl.style.color = '#059669';
+            
+            try {
+              await client.auth.signOut();
+            } catch (e) {
+              console.warn('Signout after verification failed:', e);
+            }
 
-          if (error) {
-            console.error('Verification error:', error);
+            // Redirect to login with success flag
+            setTimeout(() => {
+              window.location.href = 'login.html?verified=true';
+            }, 1500);
+          } else {
+            // No session created - verification might have failed
             msgEl.textContent = 'Email verification failed. The link may be expired.';
             msgEl.style.color = '#c0262e';
+            
             setTimeout(() => {
               window.location.href = 'login.html?verified=false';
             }, 3000);
-            return;
           }
-
-          // Success! Now sign out to prevent auto-login
-          try {
-            await client.auth.signOut();
-          } catch (e) {
-            console.warn('Signout after verification failed:', e);
-          }
-
-          msgEl.textContent = 'Email verified successfully! Redirecting to login...';
-          msgEl.style.color = '#059669';
-
-          // Redirect to login with success flag
-          setTimeout(() => {
-            window.location.href = 'login.html?verified=true';
-          }, 2000);
         } catch (err) {
           console.error('Error:', err);
           msgEl.textContent = 'An error occurred. Please try again.';
