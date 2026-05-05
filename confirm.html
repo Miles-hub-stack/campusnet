@@ -77,22 +77,30 @@
             msgEl.textContent = 'Email verified successfully! Signing out...';
             msgEl.style.color = '#059669';
             
+            // IMPORTANT: Clear all auth state
             try {
-              const signOutResult = await client.auth.signOut();
+              const signOutResult = await client.auth.signOut({ scope: 'global' });
               console.log('✅ Sign out result:', signOutResult);
+              
+              // Wait a moment for signOut to fully complete
+              await new Promise(resolve => setTimeout(resolve, 1000));
+              
+              // Verify session is actually cleared
+              const { data: sessionAfter } = await client.auth.getSession();
+              console.log('🔍 Session after logout:', sessionAfter?.session ? '⚠️ STILL EXISTS!' : '✅ CLEARED');
+              
             } catch (signOutError) {
               console.warn('⚠️ Signout failed:', signOutError);
             }
 
-            // Check session again after signout
-            const { data: sessionAfter } = await client.auth.getSession();
-            console.log('🔍 Session after logout:', sessionAfter?.session ? 'STILL EXISTS' : 'CLEARED');
-
             // Redirect to login with success flag
             console.log('📍 Redirecting to login.html?verified=true');
-            setTimeout(() => {
-              window.location.href = 'login.html?verified=true';
-            }, 1500);
+            msgEl.textContent = 'Redirecting to login...';
+            
+            // Final delay to ensure all cleanup is done
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            window.location.href = 'login.html?verified=true';
           } else {
             console.log('❌ No session created - verification might have failed');
             
